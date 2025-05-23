@@ -147,6 +147,7 @@
   <ItemGroup>
     <ClCompile Include="D3D11Utils.cpp" />
     <ClCompile Include="EngineCore.cpp" />
+    <ClCompile Include="GUIManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer.cpp" />
   </ItemGroup>
@@ -154,6 +155,7 @@
     <ClInclude Include="Common.h" />
     <ClInclude Include="D3D11Utils.h" />
     <ClInclude Include="EngineCore.h" />
+    <ClInclude Include="GUIManager.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MeshData.h" />
     <ClInclude Include="Renderer.h" />

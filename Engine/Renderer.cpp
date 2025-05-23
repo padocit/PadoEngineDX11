@@ -1,13 +1,8 @@
 #include "Renderer.h"
-#include "Vertex.h"
 
-#include <iostream>
-
-bool Renderer::Initialize(const Resolution &res, HWND hWindow)
+bool Renderer::Initialize(const Resolution &resolution, HWND hWindow)
 {
-    screenWidth = res.width;
-    screenHeight = res.height;
-    aspectRatio = res.AspectRatio();
+    SetScreenSize(resolution);
 
     if (!InitDeviceAndSwapChain(hWindow))
     {
@@ -22,6 +17,13 @@ bool Renderer::Initialize(const Resolution &res, HWND hWindow)
     InitConstantBuffer();
 
     return true;
+}
+
+void Renderer::Update()
+{
+
+
+    UpdateConstantBuffer();
 }
 
 bool Renderer::InitDeviceAndSwapChain(HWND hWindow)
@@ -145,7 +147,8 @@ void Renderer::InitConstantBuffer()
 {
     D3D11_BUFFER_DESC desc;
     ZeroMemory(&desc, sizeof(desc));
-    desc.ByteWidth = sizeof(constantData) + 0xf & 0xfffffff0; // multiple of 16 bytes
+    desc.ByteWidth =
+        sizeof(pixelShaderConstData) + 0xf & 0xfffffff0; // multiple of 16 bytes
     desc.Usage = D3D11_USAGE_DYNAMIC;
     desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -154,12 +157,28 @@ void Renderer::InitConstantBuffer()
 
     D3D11_SUBRESOURCE_DATA initData;
     ZeroMemory(&initData, sizeof(initData));
-    initData.pSysMem = &constantData;
+    initData.pSysMem = &pixelShaderConstData;
     initData.SysMemPitch = 0;
     initData.SysMemSlicePitch = 0;
 
-    ThrowIfFailed(
-        device->CreateBuffer(&desc, &initData, constantBuffer.GetAddressOf()));
+    ThrowIfFailed(device->CreateBuffer(&desc, &initData,
+                                       pixelShaderConstBuffer.GetAddressOf()));
+}
+
+void Renderer::UpdateConstantBuffer()
+{
+    if (!pixelShaderConstBuffer)
+    {
+        std::cout << "ConstBuffer was not initialized." << std::endl;
+    }
+
+    D3D11_MAPPED_SUBRESOURCE ms;
+    context->Map(pixelShaderConstBuffer.Get(), NULL, D3D11_MAP_WRITE_DISCARD,
+                 NULL, &ms);
+    memcpy(ms.pData, &pixelShaderConstData,
+           sizeof(pixelShaderConstBuffer));
+    context->Unmap(pixelShaderConstBuffer.Get(), NULL);
+
 }
 
 void Renderer::CreateMesh(const MeshData &meshData, Mesh &mesh)
@@ -198,6 +217,13 @@ void Renderer::CreateMesh(const MeshData &meshData, Mesh &mesh)
     // TODO: vertexcount, indexcount...
 }
 
+void Renderer::SetScreenSize(const Resolution& resolution)
+{
+    screenWidth = resolution.width;
+    screenHeight = resolution.height;
+    aspectRatio = resolution.AspectRatio();
+}
+
 void Renderer::SetMainViewPort()
 {
     // Set the viewport
@@ -219,7 +245,6 @@ void Renderer::Render(const Mesh &mesh)
     Prepare();
     PrepareShader();
     RenderPrimitive(mesh);
-    SwapBuffer();
 }
 
 void Renderer::SwapBuffer()
@@ -245,10 +270,7 @@ void Renderer::PrepareShader()
     context->PSSetShader(basicPS.Get(), nullptr, 0);
     context->IASetInputLayout(basicIL.Get());
 
-    if (constantBuffer)
-    {
-        context->VSSetConstantBuffers(0, 1, &constantBuffer);
-    }
+    context->PSSetConstantBuffers(0, 1, pixelShaderConstBuffer.GetAddressOf());
 }
 
 void Renderer::RenderPrimitive(const Mesh &mesh)

@@ -8,6 +8,7 @@
 #include <vector>
 #include <windows.h>
 #include <wrl/client.h> // ComPtr
+#include <directxtk/SimpleMath.h>
 
 // Create Shaders
 // Create Buffers

@@ -12,7 +12,10 @@ class Renderer
 {
 public:
 	// Init
-	bool Initialize(const Resolution& res, HWND hWindow);
+    bool Initialize(const Resolution &resolution, HWND hWindow);
+
+	// Update
+    void Update();
 
 	// Render
     void Render(const Mesh &mesh);
@@ -21,9 +24,23 @@ public:
 	// Create
     void CreateMesh(const MeshData &meshData, Mesh &mesh);
 
+	void SetScreenSize(const Resolution &resolution); // Resize
 	void SetMainViewPort();
 
 	float GetAspectRatio() const;
+
+	// Resources
+    ID3D11Device* const GetDevice() const
+    {
+        return device.Get();
+    }
+	ID3D11DeviceContext* const GetContext() const
+	{
+        return context.Get();
+	}
+
+	// юс╫ц public
+    PixelConstants pixelShaderConstData;
 
 
 private:
@@ -32,6 +49,8 @@ private:
     void InitRasterizerStates();
     void InitShaders();
     void InitConstantBuffer();
+
+	void UpdateConstantBuffer();
 
     void Prepare();
     void PrepareShader();
@@ -71,8 +90,7 @@ private:
     ComPtr<ID3D11InputLayout> basicIL;
 
 	// Constant buffers
-    Constants constantData;
-    ComPtr<ID3D11Buffer> constantBuffer;
+    ComPtr<ID3D11Buffer> pixelShaderConstBuffer;
 
 	// Depth buffer
 
