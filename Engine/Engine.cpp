@@ -1,4 +1,5 @@
-#include "EngineCore.h"
+#include "Engine.h"
+#include "GeometryGenerator.h"
 
 // imgui_impl_win32.cpp에 정의된 메시지 처리 함수에 대한 전방 선언
 // Vcpkg를 통해 IMGUI를 사용할 경우 빨간줄로 경고가 뜰 수 있음
@@ -10,27 +11,34 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd,
 using namespace std;
 using DirectX::SimpleMath::Vector3;
 
-// Singleton (Lazy)
-std::unique_ptr<EngineCore> EngineCore::instance = nullptr;
-EngineCore &EngineCore::Get()
+// Singleton
+std::unique_ptr<Engine> Engine::instance = nullptr;
+
+bool Engine::Create(std::unique_ptr<Engine> sample)
 {
-    if (instance == nullptr) {
-        instance = make_unique<EngineCore>();
-    }
-    return *instance;
+    if (instance != nullptr)
+        return false;
+
+    instance = std::move(sample);
+    return true;
+}
+
+Engine* Engine::Get()
+{
+    return instance.get();
 }
 
 // WndProc Callback my own MsgProc
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    return EngineCore::Get().MsgProc(hWnd, msg, wParam, lParam);
+    return Engine::Get()->MsgProc(hWnd, msg, wParam, lParam);
 }
 
-EngineCore::EngineCore() : mainWindow(0)
+Engine::Engine() : mainWindow(0)
 {
 }
 
-EngineCore::~EngineCore()
+Engine::~Engine()
 {
     instance = nullptr;
 
@@ -41,7 +49,7 @@ EngineCore::~EngineCore()
     // DX11 Resources = ComPtr 자동해제
 }
 
-int EngineCore::Run()
+int Engine::Run()
 {
     // Main Message Loop
     while (quit == false) {
@@ -61,7 +69,7 @@ int EngineCore::Run()
         UpdateGUI();
 
         // Update
-        Update();
+        Update(guiManager.GetDeltaTime());
 
         // Render
         Render();
@@ -70,7 +78,7 @@ int EngineCore::Run()
     return 0;
 }
 
-bool EngineCore::Initialize(int width, int height)
+bool Engine::Initialize(int width, int height)
 {
     resolution = {width, height};
 
@@ -83,52 +91,46 @@ bool EngineCore::Initialize(int width, int height)
     if (!InitGUI())
         return false;
 
+    if (!InitLevel())
+        return false;
+
     SetForegroundWindow(mainWindow);
-
-    // MeshData (vertices, indices) 생성
-    MeshData triangleData;
-    triangleData.vertices.push_back(
-        {Vector3(0.0f, 0.5f, 0.0f), Vector3(1.0f, 0.0f, 0.0f)});
-    triangleData.vertices.push_back(
-        {Vector3(0.7f, -0.5f, 0.0f), Vector3(0.0f, 1.0f, 0.0f)});
-    triangleData.vertices.push_back(
-        {Vector3(-0.7f, -0.5f, 0.0f), Vector3(0.0f, 0.0f, 1.0f)});
-
-    triangleData.indices.push_back(0);
-    triangleData.indices.push_back(1);
-    triangleData.indices.push_back(2);
-
-    // Mesh (vertices, indices buffer) 생성
-    renderer.CreateMesh(triangleData, triangle);
 
     return true;
 }
 
-void EngineCore::Update()
+// 여러 Sample에서 공통적으로 사용하기 좋은 장면 설정
+bool Engine::InitLevel()
+{
+    return false;
+}
+
+void Engine::Update(float dt)
 {
     renderer.Update(); // cbuffer update
 }
 
-void EngineCore::UpdateGUI()
+void Engine::UpdateGUI()
 {
     guiManager.BeginFrame("Scene Control");
 
     // TODO: SetGUI
     ImGui::SliderFloat("Alpha", &renderer.pixelShaderConstData.alpha, 0.0f,
                        1.0f);
+    // ImGui::...
 
     guiManager.EndFrame();
 }
 
-void EngineCore::Render()
+void Engine::Render()
 {
-    renderer.Render(triangle);
+    renderer.Render(box);
     guiManager.Render();
 
     renderer.SwapBuffer(); // Present()
 }
 
-LRESULT EngineCore::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT Engine::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam))
         return true;
@@ -148,7 +150,7 @@ LRESULT EngineCore::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-bool EngineCore::InitMainWindow(const Resolution &res)
+bool Engine::InitMainWindow(const Resolution &res)
 {
     WNDCLASSEX wc = {sizeof(WNDCLASSEX),
                      CS_CLASSDC,
@@ -189,7 +191,7 @@ bool EngineCore::InitMainWindow(const Resolution &res)
     return true;
 }
 
-bool EngineCore::InitDirect3D(const Resolution &res)
+bool Engine::InitDirect3D(const Resolution &res)
 {
     if (!renderer.Initialize(res, mainWindow))
         return false;
@@ -197,7 +199,7 @@ bool EngineCore::InitDirect3D(const Resolution &res)
     return true;
 }
 
-bool EngineCore::InitGUI()
+bool Engine::InitGUI()
 {
     if (!guiManager.Initialize(mainWindow, renderer.GetDevice(),
                                renderer.GetContext(), resolution))

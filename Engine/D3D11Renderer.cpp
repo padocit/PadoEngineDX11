@@ -1,10 +1,10 @@
-#include "Renderer.h"
+#include "D3D11Renderer.h"
 
-bool Renderer::Initialize(const Resolution &resolution, HWND hWindow)
+bool D3D11Renderer::Initialize(const Resolution &resolution, HWND hWnd)
 {
     SetScreenSize(resolution);
 
-    if (!InitDeviceAndSwapChain(hWindow))
+    if (!InitDeviceAndSwapChain(hWnd))
     {
         std::cout << "Failed to Initialize D3D device and context."
                   << std::endl;
@@ -19,14 +19,14 @@ bool Renderer::Initialize(const Resolution &resolution, HWND hWindow)
     return true;
 }
 
-void Renderer::Update()
+void D3D11Renderer::Update()
 {
 
 
     UpdateConstantBuffer();
 }
 
-bool Renderer::InitDeviceAndSwapChain(HWND hWindow)
+bool D3D11Renderer::InitDeviceAndSwapChain(HWND hWnd)
 {
     const D3D_DRIVER_TYPE driverType =
         D3D_DRIVER_TYPE_HARDWARE; // D3D_DRIVER_TYPE_WARP;
@@ -51,7 +51,7 @@ bool Renderer::InitDeviceAndSwapChain(HWND hWindow)
     sd.BufferDesc.RefreshRate.Denominator = 1;
     sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT |
                      DXGI_USAGE_UNORDERED_ACCESS; // Compute Shader
-    sd.OutputWindow = hWindow;
+    sd.OutputWindow = hWnd;
     sd.Windowed = TRUE;
     sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
     // sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; //ImGui 폰트가
@@ -74,7 +74,7 @@ bool Renderer::InitDeviceAndSwapChain(HWND hWindow)
     return true;
 }
 
-void Renderer::InitBackBuffer()
+void D3D11Renderer::InitBackBuffer()
 {
     ComPtr<ID3D11Texture2D> backBuffer;
     ThrowIfFailed(
@@ -89,7 +89,7 @@ void Renderer::InitBackBuffer()
     desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 }
 
-void Renderer::InitRasterizerStates()
+void D3D11Renderer::InitRasterizerStates()
 {
     D3D11_RASTERIZER_DESC rasterDesc = {};
     ZeroMemory(&rasterDesc, sizeof(D3D11_RASTERIZER_DESC));
@@ -102,7 +102,7 @@ void Renderer::InitRasterizerStates()
         &rasterDesc, rasterizerState.GetAddressOf()));
 }
 
-void Renderer::InitShaders()
+void D3D11Renderer::InitShaders()
 {
     ComPtr<ID3DBlob> vertexshaderCSO;
     ComPtr<ID3DBlob> pixelshaderCSO;
@@ -135,7 +135,11 @@ void Renderer::InitShaders()
     std::vector<D3D11_INPUT_ELEMENT_DESC> basicIEs = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
          D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12,
+        {"NORMALMODEL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 4 * 3,
+         D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 4 * 6,
+         D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TANGENTMODEL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 4 * 8,
          D3D11_INPUT_PER_VERTEX_DATA, 0}};
 
     device->CreateInputLayout(basicIEs.data(), UINT(basicIEs.size()),
@@ -143,7 +147,7 @@ void Renderer::InitShaders()
                               vertexshaderCSO->GetBufferSize(), &basicIL);
 }
 
-void Renderer::InitConstantBuffer()
+void D3D11Renderer::InitConstantBuffer()
 {
     D3D11_BUFFER_DESC desc;
     ZeroMemory(&desc, sizeof(desc));
@@ -165,7 +169,7 @@ void Renderer::InitConstantBuffer()
                                        pixelShaderConstBuffer.GetAddressOf()));
 }
 
-void Renderer::UpdateConstantBuffer()
+void D3D11Renderer::UpdateConstantBuffer()
 {
     if (!pixelShaderConstBuffer)
     {
@@ -181,15 +185,20 @@ void Renderer::UpdateConstantBuffer()
 
 }
 
-void Renderer::CreateMesh(const MeshData &meshData, Mesh &mesh)
+void D3D11Renderer::CreateMesh(const MeshData &meshData, Mesh &mesh)
 {
+    mesh.vertexCount = UINT(meshData.vertices.size());
+    mesh.indexCount = UINT(meshData.indices.size());
+    mesh.offset = 0;
+    mesh.stride = sizeof(Vertex);
+
     D3D11_BUFFER_DESC bufferDesc;
     bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    bufferDesc.ByteWidth = sizeof(Vertex) * 3;
+    bufferDesc.ByteWidth = mesh.stride * mesh.vertexCount;
     bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     bufferDesc.CPUAccessFlags = 0;
     bufferDesc.MiscFlags = 0;
-    bufferDesc.StructureByteStride = sizeof(Vertex);
+    bufferDesc.StructureByteStride = mesh.stride;
 
     // Fill in the subresource data.
     D3D11_SUBRESOURCE_DATA vertexBufferData;
@@ -202,7 +211,7 @@ void Renderer::CreateMesh(const MeshData &meshData, Mesh &mesh)
                                        mesh.vertexBuffer.GetAddressOf()));
 
     bufferDesc.Usage = D3D11_USAGE_IMMUTABLE; // 초기화 후 변경X
-    bufferDesc.ByteWidth = UINT(sizeof(uint32_t) * 3);
+    bufferDesc.ByteWidth = UINT(sizeof(uint32_t) * mesh.indexCount);
     bufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
     bufferDesc.StructureByteStride = sizeof(uint32_t);
 
@@ -214,17 +223,16 @@ void Renderer::CreateMesh(const MeshData &meshData, Mesh &mesh)
     device->CreateBuffer(&bufferDesc, &indexBufferData,
                          mesh.indexBuffer.GetAddressOf());
 
-    // TODO: vertexcount, indexcount...
 }
 
-void Renderer::SetScreenSize(const Resolution& resolution)
+void D3D11Renderer::SetScreenSize(const Resolution& resolution)
 {
     screenWidth = resolution.width;
     screenHeight = resolution.height;
     aspectRatio = resolution.AspectRatio();
 }
 
-void Renderer::SetMainViewPort()
+void D3D11Renderer::SetMainViewPort()
 {
     // Set the viewport
     ZeroMemory(&screenViewport, sizeof(D3D11_VIEWPORT));
@@ -238,7 +246,7 @@ void Renderer::SetMainViewPort()
     context->RSSetViewports(1, &screenViewport);
 }
 
-void Renderer::Render(const Mesh &mesh)
+void D3D11Renderer::Render(const Mesh &mesh)
 {
     SetMainViewPort();
 
@@ -247,12 +255,12 @@ void Renderer::Render(const Mesh &mesh)
     RenderPrimitive(mesh);
 }
 
-void Renderer::SwapBuffer()
+void D3D11Renderer::SwapBuffer()
 {
     swapChain->Present(1, 0); // 1: VSync
 }
 
-void Renderer::Prepare()
+void D3D11Renderer::Prepare()
 {
     context->ClearRenderTargetView(backBufferRTV.Get(), clearColor);
     // https://learn.microsoft.com/ko-kr/windows/win32/api/d3dcommon/ne-d3dcommon-d3d_primitive_topology
@@ -264,7 +272,7 @@ void Renderer::Prepare()
     context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 }
 
-void Renderer::PrepareShader()
+void D3D11Renderer::PrepareShader()
 {
     context->VSSetShader(basicVS.Get(), nullptr, 0);
     context->PSSetShader(basicPS.Get(), nullptr, 0);
@@ -273,17 +281,17 @@ void Renderer::PrepareShader()
     context->PSSetConstantBuffers(0, 1, pixelShaderConstBuffer.GetAddressOf());
 }
 
-void Renderer::RenderPrimitive(const Mesh &mesh)
+void D3D11Renderer::RenderPrimitive(const Mesh &mesh)
 {
-    UINT stride = sizeof(Vertex);
-    UINT offset = 0;
+    UINT stride = mesh.stride;
+    UINT offset = mesh.offset;
     context->IASetVertexBuffers(0, 1, mesh.vertexBuffer.GetAddressOf(), &stride,
                                 &offset);
     context->IASetIndexBuffer(mesh.indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-    context->DrawIndexed(3, 0, 0);
+    context->DrawIndexed(mesh.indexCount, 0, 0);
 }
 
-float Renderer::GetAspectRatio() const
+float D3D11Renderer::GetAspectRatio() const
 {
     return static_cast<float>(screenWidth) / screenHeight;
 }

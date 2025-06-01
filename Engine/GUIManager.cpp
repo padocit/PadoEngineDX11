@@ -11,7 +11,7 @@ bool GUIManager::Initialize(HWND hWnd, ID3D11Device *device,
     io.DisplaySize = ImVec2(float(resolution.width), float(resolution.height));
     ImGui::StyleColorsLight();
 
-    // Setup Platform/Renderer backends
+    // Setup Platform/D3D11Renderer backends
     if (!ImGui_ImplDX11_Init(device, context))
     {
         return false;

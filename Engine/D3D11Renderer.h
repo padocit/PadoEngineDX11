@@ -1,6 +1,6 @@
 #pragma once
 
-#include "D3D11Utils.h"
+#include "IRenderer.h"
 #include "Common.h"
 #include "ConstantBuffers.h"
 #include "MeshData.h"
@@ -8,26 +8,27 @@
 
 using Microsoft::WRL::ComPtr;
 
-class Renderer
+class D3D11Renderer : public IRenderer
 {
 public:
 	// Init
-    bool Initialize(const Resolution &resolution, HWND hWindow);
+    bool Initialize(const Resolution &resolution, HWND hWnd) override;
 
-	// Update
-    void Update();
+	// Shutdown (임시: 필요 시 작성)
+    void Shutdown() override {}
 
-	// Render
-    void Render(const Mesh &mesh);
-    void SwapBuffer();
+	// Update & Render
+    void Update() override;
+    void Render(const Mesh &mesh) override;
+    void SwapBuffer() override;
 
-	// Create
-    void CreateMesh(const MeshData &meshData, Mesh &mesh);
+	// Create Resource
+    void CreateMesh(const MeshData &meshData, Mesh &mesh) override;
 
-	void SetScreenSize(const Resolution &resolution); // Resize
-	void SetMainViewPort();
-
-	float GetAspectRatio() const;
+	// Screen
+    void SetScreenSize(const Resolution &resolution) override;
+    void SetMainViewPort() override;
+    float GetAspectRatio() const override;
 
 	// Resources
     ID3D11Device* const GetDevice() const
@@ -44,7 +45,7 @@ public:
 
 
 private:
-    bool InitDeviceAndSwapChain(HWND hWindow);
+    bool InitDeviceAndSwapChain(HWND hWnd);
     void InitBackBuffer();
     void InitRasterizerStates();
     void InitShaders();

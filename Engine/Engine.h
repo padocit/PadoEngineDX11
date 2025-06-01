@@ -1,20 +1,21 @@
 #pragma once
 
-#include "Renderer.h"
+#include "D3D11Renderer.h"
 #include "GUIManager.h"
 
-class EngineCore
+class Engine
 {
 public:
-	EngineCore();
-	virtual ~EngineCore();
+	Engine();
+	virtual ~Engine();
 
 	int Run();
 
 	bool Initialize(int width = 1280, int height = 720);
-	void Update();
+    virtual bool InitLevel();
+	virtual void Update(float dt);
     virtual void UpdateGUI();
-	void Render();
+	virtual void Render();
 
 	virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -23,10 +24,12 @@ public:
 	bool InitDirect3D(const Resolution& res);
 	bool InitGUI();
 
-	static EngineCore& Get();
+	// Singleton
+	static bool Create(std::unique_ptr<Engine> sample);
+	static Engine* Get();
 
 private:
-    Renderer renderer;
+    D3D11Renderer renderer;
     GUIManager guiManager;
 
 	HWND mainWindow;
@@ -34,9 +37,6 @@ private:
 	Resolution resolution;
 	bool quit = false;
 
-	// юс╫ц
-    Mesh triangle;
-
-	static std::unique_ptr<EngineCore> instance;
+	static std::unique_ptr<Engine> instance;
 };
 
