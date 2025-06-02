@@ -8,7 +8,7 @@ using namespace std;
 
 int main()
 {
-    unique_ptr<Engine> sample = make_unique<Sample_Phong>(1024, 1024);
+    unique_ptr<Engine> sample = make_unique<Sample_Phong>();
 
 	if (!Engine::Create(move(sample)))
 	{

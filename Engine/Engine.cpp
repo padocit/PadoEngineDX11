@@ -72,10 +72,11 @@ int Engine::Run()
         }
 
         // GUI
-        guiManager.BeginFrame("Scene Control");
+        guiManager.BeginFrame("Scene Control", resolution);
         UpdateGUI();
         guiManager.EndFrame(resolution);
-        //renderer.guiWidth = guiManager.guiWidth;
+        renderer.guiWidth = guiManager.guiWidth;
+        camera.SetAspectRatio(renderer.GetAspectRatio());
 
         // Update
         Update(guiManager.GetDeltaTime());
@@ -145,6 +146,28 @@ LRESULT Engine::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     switch (msg) {
     case WM_SIZE:
         // Reset Swapchain
+        if (renderer.GetSwapChain())
+        {
+            resolution.width = int(LOWORD(lParam));
+            resolution.height = int(HIWORD(lParam));
+            renderer.guiWidth = 0;
+
+            // 윈도우 Minimize 모드 screenWidth/Height == 0
+            if (resolution.width && resolution.height)
+            {
+
+                cout << "Resize SwapChain to " << resolution.width << " "
+                     << resolution.height << endl;
+
+                renderer.SetResolution(resolution);
+                renderer.SetScreenSize((UINT)LOWORD(lParam), (UINT)HIWORD(lParam));
+                camera.SetAspectRatio(renderer.GetAspectRatio());
+                //m_postProcess.Initialize(
+                //    m_device, m_context, {m_postEffectsSRV, m_prevSRV},
+                //    {m_backBufferRTV}, m_screenWidth, m_screenHeight, 4);
+            }
+
+        }
 
         break;
     case WM_SYSCOMMAND:

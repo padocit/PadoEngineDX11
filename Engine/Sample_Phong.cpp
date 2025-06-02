@@ -4,7 +4,8 @@
 
 using namespace std;
 
-Sample_Phong::Sample_Phong(int Width, int Height) : Engine(Width, Height)
+Sample_Phong::Sample_Phong() 
+    : Engine(1600, 900)
 {
 }
 

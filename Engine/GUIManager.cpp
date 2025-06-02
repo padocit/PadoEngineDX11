@@ -33,12 +33,16 @@ void GUIManager::Shutdown()
     ImGui::DestroyContext();
 }
 
-void GUIManager::BeginFrame(const char *title)
+void GUIManager::BeginFrame(const char *title, const Resolution &resolution)
 {
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
 
     ImGui::NewFrame();
+
+    ImGui::SetNextWindowSizeConstraints(
+        ImVec2(100.0f, float(resolution.height)),
+        ImVec2(resolution.width / 3.0f, float(resolution.height)));
     ImGui::Begin(title);
 
     // Framerate by ImGui
@@ -49,7 +53,8 @@ void GUIManager::BeginFrame(const char *title)
 void GUIManager::EndFrame(const Resolution &resolution)
 {
     guiWidth = int(ImGui::GetWindowWidth());
-    ImGui::SetWindowPos(ImVec2(resolution.width - guiWidth, 0.0f));
+    ImGui::SetWindowPos(ImVec2(float(resolution.width - guiWidth), 0.0f));
+    ImGui::SetWindowSize(ImVec2(float(guiWidth), float(resolution.height)));
     ImGui::End();
     ImGui::Render();
 }

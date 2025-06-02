@@ -6,7 +6,7 @@
 class Sample_Phong : public Engine
 {
 public:
-    Sample_Phong(int Width, int Height);
+    Sample_Phong();
 
     virtual bool InitLevel() override;
     virtual void UpdateGUI() override;

@@ -30,9 +30,10 @@ public:
     void SwapBuffer();
 
 	// Screen
-    void SetScreenSize(const Resolution &resolution);
+    void SetResolution(const Resolution &resolution);
     void SetMainViewPort();
     float GetAspectRatio() const;
+    void SetScreenSize(UINT width, UINT height);
 
 	// Resources
     ComPtr<ID3D11Device>& GetDevice()
@@ -43,6 +44,10 @@ public:
 	{
         return context;
 	}
+    ComPtr<IDXGISwapChain>& GetSwapChain()
+    {
+        return swapChain;
+    }
 
 public:
     bool InitDeviceAndSwapChain(HWND hWnd);
@@ -60,7 +65,7 @@ public:
 
 public:
     GlobalConstants globalConstsCPU;
-    //int guiWidth = 0;
+    int guiWidth = 0;
 
 private:
 	// Properties

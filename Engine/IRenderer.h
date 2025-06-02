@@ -24,7 +24,7 @@ public:
     virtual void SwapBuffer() = 0;
 
     // 화면 설정
-    virtual void SetScreenSize(const Resolution &resolution) = 0;
+    virtual void SetResolution(const Resolution &resolution) = 0;
     virtual void SetMainViewPort() = 0;
     virtual float GetAspectRatio() const = 0;
 };

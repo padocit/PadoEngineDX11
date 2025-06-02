@@ -4,7 +4,7 @@
 
 bool D3D11Renderer::Initialize(const Resolution &resolution, HWND hWnd)
 {
-    SetScreenSize(resolution);
+    SetResolution(resolution);
 
     if (!InitDeviceAndSwapChain(hWnd))
     {
@@ -141,9 +141,9 @@ void D3D11Renderer::CreateDepthBuffers()
                                                  defaultDSV.GetAddressOf()));
 }
 
-void D3D11Renderer::SetScreenSize(const Resolution& resolution)
+void D3D11Renderer::SetResolution(const Resolution& resolution)
 {
-    screenWidth = resolution.width;
+    screenWidth = resolution.width - guiWidth;
     screenHeight = resolution.height;
     aspectRatio = resolution.AspectRatio();
 }
@@ -154,12 +154,24 @@ void D3D11Renderer::SetMainViewPort()
     ZeroMemory(&screenViewport, sizeof(D3D11_VIEWPORT));
     screenViewport.TopLeftX = 0;
     screenViewport.TopLeftY = 0;
-    screenViewport.Width = float(screenWidth);
+    screenViewport.Width = float(screenWidth - guiWidth);
     screenViewport.Height = float(screenHeight);
     screenViewport.MinDepth = 0.0f;
     screenViewport.MaxDepth = 1.0f;
 
     context->RSSetViewports(1, &screenViewport);
+}
+
+void D3D11Renderer::SetScreenSize(UINT width, UINT height)
+{
+    backBufferRTV.Reset();
+    swapChain->ResizeBuffers(0,     // 현재 개수 유지
+                             width, // 해상도 변경
+                             height,
+                             DXGI_FORMAT_UNKNOWN, // 현재 포맷 유지
+                             0);
+    CreateBuffers();
+    SetMainViewPort();
 }
 
 void D3D11Renderer::Render(Level* level)

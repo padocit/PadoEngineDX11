@@ -8,7 +8,7 @@
 class Engine
 {
 public:
-	Engine(int Width = 1280, int Height = 720);
+	Engine(int Width = 1600, int Height = 900);
 	virtual ~Engine();
 
 	int Run();

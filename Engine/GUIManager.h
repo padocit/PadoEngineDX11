@@ -15,7 +15,7 @@ public:
 
     void Shutdown();
 
-    void BeginFrame(const char *title);
+    void BeginFrame(const char *title, const Resolution &resolution);
     void EndFrame(const Resolution &resolution);
     void Render(); // DX11 RenderDrawData
 
@@ -25,5 +25,5 @@ public:
     }
 
 public:
-    //int guiWidth = 0;
+    int guiWidth = 0;
 };
