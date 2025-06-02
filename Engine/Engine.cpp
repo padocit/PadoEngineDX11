@@ -23,7 +23,7 @@ bool Engine::Create(std::unique_ptr<Engine> sample)
     return true;
 }
 
-Engine* Engine::Get()
+Engine *Engine::Get()
 {
     return instance.get();
 }
@@ -34,7 +34,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     return Engine::Get()->MsgProc(hWnd, msg, wParam, lParam);
 }
 
-Engine::Engine(int Width, int Height) 
+Engine::Engine(int Width, int Height)
     : resolution({Width, Height}), mainWindow(0)
 {
     aspect = float(Width) / float(Height);
@@ -57,15 +57,17 @@ Engine::~Engine()
 int Engine::Run()
 {
     // Main Message Loop
-    while (/*quit == false*/true)
+    while (/*quit == false*/ true)
     {
         // Handle Input
         MSG msg = {0};
-        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
 
-            if (WM_QUIT == msg.message) {
+            if (WM_QUIT == msg.message)
+            {
                 quit = true;
                 break;
             }
@@ -124,10 +126,8 @@ void Engine::Update(float dt)
 
 void Engine::UpdateGUI()
 {
-    // TODO: SetGUI
-    //ImGui::SliderFloat("Alpha", &renderer.pixelShaderConstData.alpha, 0.0f,
-    //                   1.0f);
-    // ImGui::...
+    // 공통으로 쓰는 GUI
+    ImGui::Checkbox("FPV (F key)", &camera.useFirstPersonView);
 }
 
 void Engine::Render()
@@ -138,12 +138,43 @@ void Engine::Render()
     renderer.SwapBuffer(); // Present()
 }
 
+void Engine::OnMouseMove(int mouseX, int mouseY)
+{
+
+    mouseX = mouseX;
+    mouseY = mouseY;
+
+    // 마우스 커서의 위치를 NDC로 변환
+    // 마우스 커서는 좌측 상단 (0, 0), 우측 하단(width-1, height-1)
+    // NDC는 좌측 하단이 (-1, -1), 우측 상단(1, 1)
+    mouseNdcX = mouseX * 2.0f / resolution.width - 1.0f;
+    mouseNdcY = -mouseY * 2.0f / resolution.height + 1.0f;
+
+    // 커서가 화면 밖으로 나갔을 경우 범위 조절
+    // 게임에서는 클램프를 안할 수도 있습니다.
+    mouseNdcX = std::clamp(mouseNdcX, -1.0f, 1.0f);
+    mouseNdcY = std::clamp(mouseNdcY, -1.0f, 1.0f);
+
+    // 카메라 시점 회전
+    camera.UpdateMouse(mouseNdcX, mouseNdcY);
+}
+
+void Engine::OnMouseClick(int mouseX, int mouseY)
+{
+    mouseX = mouseX;
+    mouseY = mouseY;
+
+    mouseNdcX = mouseX * 2.0f / resolution.width - 1.0f;
+    mouseNdcY = -mouseY * 2.0f / resolution.height + 1.0f;
+}
+
 LRESULT Engine::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam))
         return true;
 
-    switch (msg) {
+    switch (msg)
+    {
     case WM_SIZE:
         // Reset Swapchain
         if (renderer.GetSwapChain())
@@ -160,21 +191,50 @@ LRESULT Engine::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                      << resolution.height << endl;
 
                 renderer.SetResolution(resolution);
-                renderer.SetScreenSize((UINT)LOWORD(lParam), (UINT)HIWORD(lParam));
+                renderer.SetScreenSize((UINT)LOWORD(lParam),
+                                       (UINT)HIWORD(lParam));
                 camera.SetAspectRatio(renderer.GetAspectRatio());
-                //m_postProcess.Initialize(
-                //    m_device, m_context, {m_postEffectsSRV, m_prevSRV},
-                //    {m_backBufferRTV}, m_screenWidth, m_screenHeight, 4);
+                // m_postProcess.Initialize(
+                //     m_device, m_context, {m_postEffectsSRV, m_prevSRV},
+                //     {m_backBufferRTV}, m_screenWidth, m_screenHeight, 4);
             }
-
         }
-
         break;
     case WM_SYSCOMMAND:
         break;
     case WM_MOUSEMOVE:
+        OnMouseMove(LOWORD(lParam), HIWORD(lParam));
         break;
-        // TODO: ...
+    case WM_KEYDOWN:
+        keyPressed[wParam] = true;
+        if (wParam == VK_ESCAPE) // ESC키 종료
+        {
+            DestroyWindow(hwnd);
+        }
+        break;
+    case WM_KEYUP:
+        if (wParam == 'F') // F키 1인칭 시점
+        {
+            camera.useFirstPersonView = !camera.useFirstPersonView;
+        }
+        if (wParam == 'C') // C키 화면 캡쳐
+        {
+            renderer.CaptureScreen();
+        }
+        //if (wParam == 'P') // P키 애니메이션 일시중지
+        //{
+        //    pauseAnimation = !pauseAnimation;
+        //}
+        if (wParam == 'Z') // 카메라 설정 출력
+        {
+            camera.PrintView();
+        }
+
+        keyPressed[wParam] = false;
+        break;
+    case WM_DESTROY:
+        ::PostQuitMessage(0);
+        return 0;
     }
 
     return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -195,7 +255,8 @@ bool Engine::InitMainWindow(const Resolution &res)
                      L"HongLabGraphics", // lpszClassName, L-string
                      NULL};
 
-    if (!RegisterClassEx(&wc)) {
+    if (!RegisterClassEx(&wc))
+    {
         cout << "RegisterClassEx() failed." << endl;
         return false;
     }
@@ -210,7 +271,8 @@ bool Engine::InitMainWindow(const Resolution &res)
                      wr.bottom - wr.top, // Window height
                      NULL, NULL, wc.hInstance, NULL);
 
-    if (!mainWindow) {
+    if (!mainWindow)
+    {
         cout << "CreateWindow() failed." << endl;
         return false;
     }

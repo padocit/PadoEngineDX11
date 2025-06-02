@@ -49,6 +49,8 @@ bool Sample_Phong::InitLevel()
 
 void Sample_Phong::UpdateGUI()
 {
+    Engine::UpdateGUI();
+
     // Material(Actor), useBlinnPhong (phongConsts) GUI ¿¬°á
     ImGui::Checkbox("Use texture", &phongConstsCPU.useTexture);
 
@@ -101,7 +103,6 @@ void Sample_Phong::UpdateGUI()
                        512.0f);
 
 
-    Engine::UpdateGUI();
 }
 
 void Sample_Phong::Update(float dt)

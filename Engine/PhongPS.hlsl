@@ -1,4 +1,7 @@
 // Phong vs Blinn-phong
+// BRDF: LdotV vs NdotH (Halfway vector)
+// 결과: Specular 표현 양상이 다르며, Normal과 Eye 사이각이 커질수록 더 두드러진다.
+
 #include "Common.hlsli"
 
 #define NUM_DIR_LIGHTS 1

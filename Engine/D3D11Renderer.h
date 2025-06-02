@@ -35,6 +35,8 @@ public:
     float GetAspectRatio() const;
     void SetScreenSize(UINT width, UINT height);
 
+    void CaptureScreen();
+
 	// Resources
     ComPtr<ID3D11Device>& GetDevice()
     {

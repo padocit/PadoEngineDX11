@@ -19,7 +19,9 @@ public:
     virtual void UpdateGUI();
 	virtual void Render();
 
-	virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    virtual void OnMouseMove(int mouseX, int mouseY);
+    virtual void OnMouseClick(int mouseX, int mouseY);
+    virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 	// Init
 	bool InitMainWindow(const Resolution& resolution);
@@ -64,6 +66,8 @@ protected:
     int mouseX = -1;
     int mouseY = -1;
 
+
+	bool pauseAnimation = false;
 
 
 	static std::unique_ptr<Engine> instance;

@@ -174,6 +174,13 @@ void D3D11Renderer::SetScreenSize(UINT width, UINT height)
     SetMainViewPort();
 }
 
+void D3D11Renderer::CaptureScreen()
+{
+    ComPtr<ID3D11Texture2D> backBuffer;
+    swapChain->GetBuffer(0, IID_PPV_ARGS(backBuffer.GetAddressOf()));
+    D3D11Utils::WriteToPngFile(device, context, backBuffer, "captured.png");
+}
+
 void D3D11Renderer::Render(Level* level)
 {
     SetMainViewPort();
