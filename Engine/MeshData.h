@@ -8,7 +8,7 @@
 struct MeshData
 {
     std::vector<Vertex> vertices;
-    vector<SkinnedVertex> skinnedVertices;
+    std::vector<SkinnedVertex> skinnedVertices;
     std::vector<uint32_t> indices;
 
     std::string albedoTextureFilename;

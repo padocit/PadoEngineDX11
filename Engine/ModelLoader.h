@@ -20,7 +20,7 @@ class ModelLoader
 public:
     void Load(std::string newBasePath, std::string filename,
               bool newRevertNormals);
-    void LoadAnimation(string newBasePath, string filename);
+    void LoadAnimation(std::string newBasePath, std::string filename);
 
     const aiNode *FindParent(const aiNode *node);
 

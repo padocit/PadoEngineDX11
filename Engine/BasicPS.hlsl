@@ -1,12 +1,16 @@
 #include "Common.hlsli"
 
-cbuffer PixelConstants : register(b0)
-{
-    float alpha;
-    float3 dummy;
-}
+Texture2D albedoTex : register(t0);
 
-float4 main(PixelShaderInput input) : SV_Target
+struct PixelShaderOutput
 {
-    return float4(0.0, 1.0, 0.0, 1.0);
+    float4 pixelColor : SV_Target0;
+};
+
+PixelShaderOutput main(PixelShaderInput input)
+{
+    PixelShaderOutput output;
+    output.pixelColor = 2.0 * albedoTex.Sample(linearWrapSampler, input.texcoord);
+
+    return output;
 }

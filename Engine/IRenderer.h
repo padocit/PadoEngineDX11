@@ -3,6 +3,8 @@
 
 #include "D3D11Utils.h"
 
+class Level;
+class Camera;
 struct Mesh;
 struct MeshData;
 struct Resolution;
@@ -17,12 +19,9 @@ public:
     virtual void Shutdown() = 0;
 
     // 업데이트 및 렌더링
-    virtual void Update() = 0;
-    virtual void Render(const Mesh &mesh) = 0;
+    virtual void Update(Level* level, Camera* camera, float dt) = 0;
+    virtual void Render(Level* level) = 0;
     virtual void SwapBuffer() = 0;
-
-    // 리소스 생성
-    virtual void CreateMesh(const MeshData &meshData, Mesh &mesh) = 0;
 
     // 화면 설정
     virtual void SetScreenSize(const Resolution &resolution) = 0;

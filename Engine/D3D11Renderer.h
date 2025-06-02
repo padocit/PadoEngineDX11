@@ -1,10 +1,13 @@
 #pragma once
 
+#include "D3D11Common.h"
 #include "IRenderer.h"
+#include "Camera.h"
 #include "Common.h"
-#include "ConstantBuffers.h"
+#include "ConstantBuffer.h"
 #include "MeshData.h"
 #include "Mesh.h"
+#include "Level.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -18,12 +21,15 @@ public:
     void Shutdown() override {}
 
 	// Update & Render
-    void Update() override;
-    void Render(const Mesh &mesh) override;
+    void Update(Level* level, Camera* camera, float dt) override;
+    //virtual void UpdateLights(float dt);
+    //virtual void RenderDepthOnly();
+    //virtual void RenderShadowMaps();
+    //virtual void RenderOpaqueObjects();
+    //virtual void RenderMirror();
+    void Render(Level* level) override;
     void SwapBuffer() override;
 
-	// Create Resource
-    void CreateMesh(const MeshData &meshData, Mesh &mesh) override;
 
 	// Screen
     void SetScreenSize(const Resolution &resolution) override;
@@ -31,32 +37,28 @@ public:
     float GetAspectRatio() const override;
 
 	// Resources
-    ID3D11Device* const GetDevice() const
+    ComPtr<ID3D11Device>& GetDevice()
     {
-        return device.Get();
+        return device;
     }
-	ID3D11DeviceContext* const GetContext() const
+	ComPtr<ID3D11DeviceContext>& GetContext()
 	{
-        return context.Get();
+        return context;
 	}
 
-	// юс╫ц public
-    PixelConstants pixelShaderConstData;
-
-
-private:
+public:
     bool InitDeviceAndSwapChain(HWND hWnd);
-    void InitBackBuffer();
-    void InitRasterizerStates();
-    void InitShaders();
-    void InitConstantBuffer();
+    
+    void UpdateGlobalConstants(const float &dt, const Vector3 &eyeWorld,
+                               const Matrix &viewRow, const Matrix &projRow);
+                               //const Matrix &refl = Matrix());
+    void SetGlobalConsts(ComPtr<ID3D11Buffer> &globalConstsGPU);
 
-	void UpdateConstantBuffer();
+    void SetPipelineState(const D3D11PSO &pso);
+    void CreateBuffers();
+    void CreateDepthBuffers();
 
     void Prepare();
-    void PrepareShader();
-    void RenderPrimitive(const Mesh &mesh);
-
 
 private:
 	// Properties
@@ -71,6 +73,9 @@ private:
 	// Backbuffer
 	DXGI_FORMAT backBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 
+    // Depth buffer
+    ComPtr<ID3D11DepthStencilView> defaultDSV;
+
 	// Viewport
     D3D11_VIEWPORT screenViewport;
 
@@ -80,20 +85,8 @@ private:
 	ComPtr<IDXGISwapChain> swapChain;
 	ComPtr<ID3D11RenderTargetView> backBufferRTV;
 
-	// Rasterizer State
-    ComPtr<ID3D11RasterizerState> rasterizerState;
-
-	// Shaders
-    ComPtr<ID3D11VertexShader> basicVS;
-    ComPtr<ID3D11PixelShader> basicPS;
-
-	// Input Layouts
-    ComPtr<ID3D11InputLayout> basicIL;
-
-	// Constant buffers
-    ComPtr<ID3D11Buffer> pixelShaderConstBuffer;
-
-	// Depth buffer
-
+	// cbuffer
+    GlobalConstants globalConstsCPU;
+    ComPtr<ID3D11Buffer> globalConstsGPU;
 };
 

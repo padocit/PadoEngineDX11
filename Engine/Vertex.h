@@ -13,10 +13,10 @@ struct Vertex
 
 struct SkinnedVertex
 {
-    Vector3 position;
-    Vector3 normalModel;
-    Vector2 texcoord;
-    Vector3 tangentModel;
+    DirectX::SimpleMath::Vector3 position;
+    DirectX::SimpleMath::Vector3 normalModel;
+    DirectX::SimpleMath::Vector2 texcoord;
+    DirectX::SimpleMath::Vector3 tangentModel;
 
     float blendWeights[8] = {0.0f, 0.0f, 0.0f, 0.0f,
                              0.0f, 0.0f, 0.0f, 0.0f};  // BLENDWEIGHT0 and 1

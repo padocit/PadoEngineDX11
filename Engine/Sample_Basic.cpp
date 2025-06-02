@@ -1,20 +1,32 @@
 #include "Sample_Basic.h"
 #include "GeometryGenerator.h"
+#include "Actor.h"
 
-Sample_Basic::Sample_Basic()
+using namespace std;
+
+Sample_Basic::Sample_Basic(int Width, int Height) 
+    : Engine(Width, Height)
 {
 }
 
 bool Sample_Basic::InitLevel()
 {
-    // MeshData (vertices, indices) 积己
-    auto boxData = GeometryGenerator::MakeBox(0.5f);
-
-    // Mesh (vertices, indices buffer) 积己
-    renderer.CreateMesh(boxData, box);
-
-
+    Engine::camera.Reset(Vector3(0.0f, 0.0f, -2.5f), 0.0f, 0.0f);
     Engine::InitLevel();
+      
+    // 冠胶
+    {   
+        MeshData boxData = GeometryGenerator::MakeBox(0.5f);
+        boxData.albedoTextureFilename = "../Assets/Textures/box.png";
+
+        auto newActor = make_shared<Actor>(
+            renderer.GetDevice(), renderer.GetContext(), vector{boxData});
+        newActor->materialConsts.GetCpu().albedoFactor = Vector3(1.0f);
+        newActor->UpdateConstantBuffers(renderer.GetDevice(),
+                                        renderer.GetContext());
+        newActor->name = "Box";
+        level.AddActor(newActor);
+    }
     return true;
 }
 

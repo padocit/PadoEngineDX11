@@ -34,8 +34,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     return Engine::Get()->MsgProc(hWnd, msg, wParam, lParam);
 }
 
-Engine::Engine() : mainWindow(0)
+Engine::Engine(int Width, int Height) 
+    : resolution({Width, Height}), mainWindow(0)
 {
+    aspect = float(Width) / float(Height);
+
+    camera.SetAspectRatio(aspect);
+    camera_debug.SetAspectRatio(aspect);
 }
 
 Engine::~Engine()
@@ -52,7 +57,8 @@ Engine::~Engine()
 int Engine::Run()
 {
     // Main Message Loop
-    while (quit == false) {
+    while (/*quit == false*/true)
+    {
         // Handle Input
         MSG msg = {0};
         while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
@@ -78,10 +84,8 @@ int Engine::Run()
     return 0;
 }
 
-bool Engine::Initialize(int width, int height)
+bool Engine::Initialize()
 {
-    resolution = {width, height};
-
     if (!InitMainWindow(resolution))
         return false;
 
@@ -107,7 +111,11 @@ bool Engine::InitLevel()
 
 void Engine::Update(float dt)
 {
-    renderer.Update(); // cbuffer update
+    // 카메라 이동
+    camera.UpdateKeyboard(dt, keyPressed);
+    // ProcessMouseControl();
+
+    renderer.Update(&level, &camera, dt);
 }
 
 void Engine::UpdateGUI()
@@ -115,8 +123,8 @@ void Engine::UpdateGUI()
     guiManager.BeginFrame("Scene Control");
 
     // TODO: SetGUI
-    ImGui::SliderFloat("Alpha", &renderer.pixelShaderConstData.alpha, 0.0f,
-                       1.0f);
+    //ImGui::SliderFloat("Alpha", &renderer.pixelShaderConstData.alpha, 0.0f,
+    //                   1.0f);
     // ImGui::...
 
     guiManager.EndFrame();
@@ -124,7 +132,7 @@ void Engine::UpdateGUI()
 
 void Engine::Render()
 {
-    renderer.Render(box);
+    renderer.Render(&level);
     guiManager.Render();
 
     renderer.SwapBuffer(); // Present()
@@ -201,8 +209,8 @@ bool Engine::InitDirect3D(const Resolution &res)
 
 bool Engine::InitGUI()
 {
-    if (!guiManager.Initialize(mainWindow, renderer.GetDevice(),
-                               renderer.GetContext(), resolution))
+    if (!guiManager.Initialize(mainWindow, renderer.GetDevice().Get(),
+                               renderer.GetContext().Get(), resolution))
         return false;
 
     return true;

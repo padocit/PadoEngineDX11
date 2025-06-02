@@ -1,4 +1,6 @@
 #include "D3D11Renderer.h"
+#include "D3D11Utils.h"
+#include "D3D11Common.h"
 
 bool D3D11Renderer::Initialize(const Resolution &resolution, HWND hWnd)
 {
@@ -10,20 +12,33 @@ bool D3D11Renderer::Initialize(const Resolution &resolution, HWND hWnd)
                   << std::endl;
         return false;
     }
+     
+    Graphics::InitCommonStates(device);
 
-    InitBackBuffer();
-    InitRasterizerStates();
-    InitShaders();
-    InitConstantBuffer();
+    CreateBuffers(); // backbuffer 포함
+
+    SetMainViewPort();
+
+    // 공통으로 쓰이는 cbuffers
+    D3D11Utils::CreateConstBuffer(device, globalConstsCPU,
+                                  globalConstsGPU);
 
     return true;
 }
 
-void D3D11Renderer::Update()
+void D3D11Renderer::Update(Level* level, Camera* camera, float dt)
 {
+    const Vector3 eyeWorld = camera->GetEyePos();
+    //const Matrix reflectRow = Matrix::CreateReflection(mirrorPlane);
+    const Matrix viewRow = camera->GetViewRow();
+    const Matrix projRow = camera->GetProjRow();
 
+    // UpdateLights(dt);
 
-    UpdateConstantBuffer();
+    // 공용 cbuffer 업데이트
+    UpdateGlobalConstants(dt, eyeWorld, viewRow, projRow);
+
+    level->Update(device, context);
 }
 
 bool D3D11Renderer::InitDeviceAndSwapChain(HWND hWnd)
@@ -57,8 +72,16 @@ bool D3D11Renderer::InitDeviceAndSwapChain(HWND hWnd)
     // sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; //ImGui 폰트가
     // 두꺼워짐
     sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-    sd.SampleDesc.Count = 1; // _FLIP_은 MSAA 미지원
-    sd.SampleDesc.Quality = 0;
+    if (numQualityLevels > 0)
+    {
+        sd.SampleDesc.Count = 4; // how many multisamples
+        sd.SampleDesc.Quality = numQualityLevels - 1;
+    }
+    else
+    {
+        sd.SampleDesc.Count = 1; // how many multisamples
+        sd.SampleDesc.Quality = 0;
+    }
 
     ThrowIfFailed(D3D11CreateDeviceAndSwapChain(
         0, driverType, 0, createDeviceFlags, featureLevels, 1,
@@ -74,7 +97,7 @@ bool D3D11Renderer::InitDeviceAndSwapChain(HWND hWnd)
     return true;
 }
 
-void D3D11Renderer::InitBackBuffer()
+void D3D11Renderer::CreateBuffers()
 {
     ComPtr<ID3D11Texture2D> backBuffer;
     ThrowIfFailed(
@@ -84,145 +107,38 @@ void D3D11Renderer::InitBackBuffer()
     ThrowIfFailed(device->CheckMultisampleQualityLevels(
         DXGI_FORMAT_R16G16B16A16_FLOAT, 4, &numQualityLevels));
 
+    CreateDepthBuffers();
+}
+
+void D3D11Renderer::CreateDepthBuffers()
+{
+    // DepthStencilView 만들기
     D3D11_TEXTURE2D_DESC desc;
-    backBuffer->GetDesc(&desc);
-    desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-}
-
-void D3D11Renderer::InitRasterizerStates()
-{
-    D3D11_RASTERIZER_DESC rasterDesc = {};
-    ZeroMemory(&rasterDesc, sizeof(D3D11_RASTERIZER_DESC));
-    rasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-    rasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
-    rasterDesc.FrontCounterClockwise = false;
-    rasterDesc.DepthClipEnable = true;
-    rasterDesc.MultisampleEnable = true;
-    ThrowIfFailed(device->CreateRasterizerState(
-        &rasterDesc, rasterizerState.GetAddressOf()));
-}
-
-void D3D11Renderer::InitShaders()
-{
-    ComPtr<ID3DBlob> vertexshaderCSO;
-    ComPtr<ID3DBlob> pixelshaderCSO;
-
-    UINT compileFlags = 0;
-#if defined(DEBUG) || defined(_DEBUG)
-    compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
-
-    ComPtr<ID3DBlob> errorBlobVS;
-    HRESULT hr_VS = D3DCompileFromFile(
-        L"BasicVS.hlsl", nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main",
-        "vs_5_0", compileFlags, 0, &vertexshaderCSO, &errorBlobVS);
-    CheckResult(hr_VS, errorBlobVS.Get());
-
-    device->CreateVertexShader(vertexshaderCSO->GetBufferPointer(),
-                               vertexshaderCSO->GetBufferSize(), nullptr,
-                               &basicVS);
-
-    ComPtr<ID3DBlob> errorBlobPS;
-    HRESULT hr_PS = D3DCompileFromFile(
-        L"BasicPS.hlsl", nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main",
-        "ps_5_0", compileFlags, 0, &pixelshaderCSO, &errorBlobPS);
-    CheckResult(hr_PS, errorBlobPS.Get());
-
-    device->CreatePixelShader(pixelshaderCSO->GetBufferPointer(),
-                              pixelshaderCSO->GetBufferSize(), nullptr,
-                              &basicPS);
-
-    std::vector<D3D11_INPUT_ELEMENT_DESC> basicIEs = {
-        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
-         D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"NORMALMODEL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 4 * 3,
-         D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 4 * 6,
-         D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"TANGENTMODEL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 4 * 8,
-         D3D11_INPUT_PER_VERTEX_DATA, 0}};
-
-    device->CreateInputLayout(basicIEs.data(), UINT(basicIEs.size()),
-                              vertexshaderCSO->GetBufferPointer(),
-                              vertexshaderCSO->GetBufferSize(), &basicIL);
-}
-
-void D3D11Renderer::InitConstantBuffer()
-{
-    D3D11_BUFFER_DESC desc;
     ZeroMemory(&desc, sizeof(desc));
-    desc.ByteWidth =
-        sizeof(pixelShaderConstData) + 0xf & 0xfffffff0; // multiple of 16 bytes
-    desc.Usage = D3D11_USAGE_DYNAMIC;
-    desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    desc.Width = screenWidth;
+    desc.Height = screenHeight;
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    desc.CPUAccessFlags = 0;
     desc.MiscFlags = 0;
-    desc.StructureByteStride = 0;
-
-    D3D11_SUBRESOURCE_DATA initData;
-    ZeroMemory(&initData, sizeof(initData));
-    initData.pSysMem = &pixelShaderConstData;
-    initData.SysMemPitch = 0;
-    initData.SysMemSlicePitch = 0;
-
-    ThrowIfFailed(device->CreateBuffer(&desc, &initData,
-                                       pixelShaderConstBuffer.GetAddressOf()));
-}
-
-void D3D11Renderer::UpdateConstantBuffer()
-{
-    if (!pixelShaderConstBuffer)
+    if (useMSAA && numQualityLevels > 0)
     {
-        std::cout << "ConstBuffer was not initialized." << std::endl;
+        desc.SampleDesc.Count = 4;
+        desc.SampleDesc.Quality = numQualityLevels - 1;
     }
-
-    D3D11_MAPPED_SUBRESOURCE ms;
-    context->Map(pixelShaderConstBuffer.Get(), NULL, D3D11_MAP_WRITE_DISCARD,
-                 NULL, &ms);
-    memcpy(ms.pData, &pixelShaderConstData,
-           sizeof(pixelShaderConstBuffer));
-    context->Unmap(pixelShaderConstBuffer.Get(), NULL);
-
-}
-
-void D3D11Renderer::CreateMesh(const MeshData &meshData, Mesh &mesh)
-{
-    mesh.vertexCount = UINT(meshData.vertices.size());
-    mesh.indexCount = UINT(meshData.indices.size());
-    mesh.offset = 0;
-    mesh.stride = sizeof(Vertex);
-
-    D3D11_BUFFER_DESC bufferDesc;
-    bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    bufferDesc.ByteWidth = mesh.stride * mesh.vertexCount;
-    bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    bufferDesc.CPUAccessFlags = 0;
-    bufferDesc.MiscFlags = 0;
-    bufferDesc.StructureByteStride = mesh.stride;
-
-    // Fill in the subresource data.
-    D3D11_SUBRESOURCE_DATA vertexBufferData;
-    vertexBufferData.pSysMem = meshData.vertices.data();
-    vertexBufferData.SysMemPitch = 0;
-    vertexBufferData.SysMemSlicePitch = 0;
-
-    // Create the vertex buffer.
-    ThrowIfFailed(device->CreateBuffer(&bufferDesc, &vertexBufferData,
-                                       mesh.vertexBuffer.GetAddressOf()));
-
-    bufferDesc.Usage = D3D11_USAGE_IMMUTABLE; // 초기화 후 변경X
-    bufferDesc.ByteWidth = UINT(sizeof(uint32_t) * mesh.indexCount);
-    bufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    bufferDesc.StructureByteStride = sizeof(uint32_t);
-
-    D3D11_SUBRESOURCE_DATA indexBufferData = {0};
-    indexBufferData.pSysMem = meshData.indices.data();
-    indexBufferData.SysMemPitch = 0;
-    indexBufferData.SysMemSlicePitch = 0;
-
-    device->CreateBuffer(&bufferDesc, &indexBufferData,
-                         mesh.indexBuffer.GetAddressOf());
-
+    else
+    {
+        desc.SampleDesc.Count = 1;
+        desc.SampleDesc.Quality = 0;
+    }
+    desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    ComPtr<ID3D11Texture2D> depthStencilBuffer;
+    ThrowIfFailed(
+        device->CreateTexture2D(&desc, 0, depthStencilBuffer.GetAddressOf()));
+    ThrowIfFailed(device->CreateDepthStencilView(depthStencilBuffer.Get(), NULL,
+                                                 defaultDSV.GetAddressOf()));
 }
 
 void D3D11Renderer::SetScreenSize(const Resolution& resolution)
@@ -246,13 +162,31 @@ void D3D11Renderer::SetMainViewPort()
     context->RSSetViewports(1, &screenViewport);
 }
 
-void D3D11Renderer::Render(const Mesh &mesh)
+void D3D11Renderer::Render(Level* level)
 {
     SetMainViewPort();
 
-    Prepare();
-    PrepareShader();
-    RenderPrimitive(mesh);
+    // 공통으로 사용하는 샘플러 설정
+    context->VSSetSamplers(0, UINT(Graphics::sampleStates.size()),
+                           Graphics::sampleStates.data());
+    context->PSSetSamplers(0, UINT(Graphics::sampleStates.size()),
+                             Graphics::sampleStates.data());
+    
+    // 공통으로 사용할 텍스춰들: "Common.hlsli"에서 register(t10)부터 시작
+    //vector<ID3D11ShaderResourceView *> commonSRVs = {
+    //    m_envSRV.Get(), m_specularSRV.Get(), m_irradianceSRV.Get(),
+    //    m_brdfSRV.Get()};
+    //m_context->PSSetShaderResources(10, UINT(commonSRVs.size()),
+    //                                commonSRVs.data());
+
+    Prepare(); 
+     
+    SetPipelineState(drawAsWire ? Graphics::defaultWirePSO
+                                : Graphics::defaultSolidPSO);
+    SetGlobalConsts(globalConstsGPU);
+    level->Render(context);
+
+    context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), NULL);
 }
 
 void D3D11Renderer::SwapBuffer()
@@ -260,35 +194,60 @@ void D3D11Renderer::SwapBuffer()
     swapChain->Present(1, 0); // 1: VSync
 }
 
-void D3D11Renderer::Prepare()
+void D3D11Renderer::UpdateGlobalConstants(const float &dt,
+                                          const Vector3 &eyeWorld,
+                                          const Matrix &viewRow,
+                                          const Matrix &projRow)
+                                          //const Matrix &refl)
 {
+    globalConstsCPU.globalTime += dt;
+    globalConstsCPU.eyeWorld = eyeWorld;
+    globalConstsCPU.view = viewRow.Transpose();
+    globalConstsCPU.proj = projRow.Transpose();
+    globalConstsCPU.invProj = projRow.Invert().Transpose();
+    globalConstsCPU.viewProj = (viewRow * projRow).Transpose();
+    globalConstsCPU.invView = viewRow.Invert().Transpose();
+
+    // 그림자 렌더링에 사용
+    globalConstsCPU.invViewProj = globalConstsCPU.viewProj.Invert();
+
+    D3D11Utils::UpdateBuffer(context, globalConstsCPU, globalConstsGPU);
+}
+
+void D3D11Renderer::SetGlobalConsts(ComPtr<ID3D11Buffer> &globalConstsGPU)
+{
+    // 쉐이더와 일관성 유지 cbuffer GlobalConstants : register(b0)
+    context->VSSetConstantBuffers(0, 1, globalConstsGPU.GetAddressOf());
+    context->PSSetConstantBuffers(0, 1, globalConstsGPU.GetAddressOf());
+    context->GSSetConstantBuffers(0, 1, globalConstsGPU.GetAddressOf());
+}
+
+
+void D3D11Renderer::SetPipelineState(const D3D11PSO &pso)
+{
+    context->VSSetShader(pso.vertexShader.Get(), 0, 0);
+    context->PSSetShader(pso.pixelShader.Get(), 0, 0);
+    context->HSSetShader(pso.hullShader.Get(), 0, 0);
+    context->DSSetShader(pso.domainShader.Get(), 0, 0);
+    context->GSSetShader(pso.geometryShader.Get(), 0, 0);
+    context->CSSetShader(NULL, 0, 0);
+    context->IASetInputLayout(pso.inputLayout.Get());
+    context->RSSetState(pso.rasterizerState.Get());
+    context->OMSetBlendState(pso.blendState.Get(), pso.blendFactor,
+                             0xffffffff);
+    context->OMSetDepthStencilState(pso.depthStencilState.Get(),
+                                    pso.stencilRef);
+    context->IASetPrimitiveTopology(pso.primitiveTopology);
+}
+
+void D3D11Renderer::Prepare()
+{ 
     context->ClearRenderTargetView(backBufferRTV.Get(), clearColor);
     // https://learn.microsoft.com/ko-kr/windows/win32/api/d3dcommon/ne-d3dcommon-d3d_primitive_topology
-    context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    context->ClearDepthStencilView(
+        defaultDSV.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    context->RSSetState(rasterizerState.Get());
-
-    context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), nullptr);
-    context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
-}
-
-void D3D11Renderer::PrepareShader()
-{
-    context->VSSetShader(basicVS.Get(), nullptr, 0);
-    context->PSSetShader(basicPS.Get(), nullptr, 0);
-    context->IASetInputLayout(basicIL.Get());
-
-    context->PSSetConstantBuffers(0, 1, pixelShaderConstBuffer.GetAddressOf());
-}
-
-void D3D11Renderer::RenderPrimitive(const Mesh &mesh)
-{
-    UINT stride = mesh.stride;
-    UINT offset = mesh.offset;
-    context->IASetVertexBuffers(0, 1, mesh.vertexBuffer.GetAddressOf(), &stride,
-                                &offset);
-    context->IASetIndexBuffer(mesh.indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-    context->DrawIndexed(mesh.indexCount, 0, 0);
+    context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), defaultDSV.Get());
 }
 
 float D3D11Renderer::GetAspectRatio() const

@@ -2,16 +2,18 @@
 
 #include "D3D11Renderer.h"
 #include "GUIManager.h"
+#include "Camera.h"
+#include "Level.h"
 
 class Engine
 {
 public:
-	Engine();
+	Engine(int Width = 1280, int Height = 720);
 	virtual ~Engine();
 
 	int Run();
 
-	bool Initialize(int width = 1280, int height = 720);
+	bool Initialize();
     virtual bool InitLevel();
 	virtual void Update(float dt);
     virtual void UpdateGUI();
@@ -24,18 +26,45 @@ public:
 	bool InitDirect3D(const Resolution& res);
 	bool InitGUI();
 
+	const D3D11Renderer &GetRenderer()
+    {
+        return renderer;
+    }
+
 	// Singleton
 	static bool Create(std::unique_ptr<Engine> sample);
 	static Engine* Get();
 
-private:
+protected:
     D3D11Renderer renderer;
     GUIManager guiManager;
-
 	HWND mainWindow;
 
+    Level level;
+
+	Camera camera;
+    Camera camera_debug; // 디버깅용 카메라 (ex. culling)
+
 	Resolution resolution;
+    float aspect;
 	bool quit = false;
+
+	bool keyPressed[256] = {
+        false,
+    };
+
+    bool leftButton = false;
+    bool rightButton = false;
+    bool dragStartFlag = false;
+
+    // 마우스 커서 위치 저장 (Picking에 사용)
+    float mouseNdcX = 0.0f;
+    float mouseNdcY = 0.0f;
+    float wheelDelta = 0.0f;
+    int mouseX = -1;
+    int mouseY = -1;
+
+
 
 	static std::unique_ptr<Engine> instance;
 };

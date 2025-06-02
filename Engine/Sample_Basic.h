@@ -3,7 +3,7 @@
 class Sample_Basic : public Engine
 {
 public:
-    Sample_Basic();
+    Sample_Basic(int Width, int Height);
 
     virtual bool InitLevel() override;
     virtual void UpdateGUI() override;

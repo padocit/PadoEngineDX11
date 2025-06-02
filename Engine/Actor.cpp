@@ -344,6 +344,7 @@ void Actor::Render(ComPtr<ID3D11DeviceContext> &context)
                                         &mesh->stride, &mesh->offset);
             context->IASetIndexBuffer(mesh->indexBuffer.Get(),
                                       DXGI_FORMAT_R32_UINT, 0);
+
             context->DrawIndexed(mesh->indexCount, 0, 0);
 
             // Release resources

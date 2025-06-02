@@ -5,6 +5,8 @@
 using namespace std;
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
+using DirectX::SimpleMath::Vector2;
+using DirectX::SimpleMath::Vector3;
 
 MeshData GeometryGenerator::MakeSquare(const float scale,
                                        const Vector2 texScale)

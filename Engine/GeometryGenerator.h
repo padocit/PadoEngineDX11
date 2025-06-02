@@ -12,6 +12,7 @@
 using DirectX::SimpleMath::Vector2;
 using std::string;
 using std::tuple;
+using std::vector;
 
 class GeometryGenerator
 {

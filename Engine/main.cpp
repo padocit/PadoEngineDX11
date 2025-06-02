@@ -7,7 +7,7 @@ using namespace std;
 
 int main()
 {
-    unique_ptr<Engine> sample = make_unique<Sample_Basic>();
+    unique_ptr<Engine> sample = make_unique<Sample_Basic>(1024, 1024);
 
 	if (!Engine::Create(move(sample)))
 	{
@@ -16,7 +16,7 @@ int main()
 	}
 
 	Engine* engine = Engine::Get();
-	if (!engine->Initialize(1024, 1024))
+	if (!engine->Initialize())
 	{
 		cout << "Initialization failed." << endl;
 		return -1;

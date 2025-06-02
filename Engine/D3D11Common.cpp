@@ -498,9 +498,9 @@ void Graphics::InitPipelineStates(ComPtr<ID3D11Device> &device)
     //skinnedSolidPSO.vertexShader = skinnedVS;
     //skinnedSolidPSO.inputLayout = skinnedIL;
 
-    //// defaultWirePSO
-    //defaultWirePSO = defaultSolidPSO;
-    //defaultWirePSO.rasterizerState = wireRS;
+    // defaultWirePSO
+    defaultWirePSO = defaultSolidPSO;
+    defaultWirePSO.rasterizerState = wireRS;
 
     //// Skinned mesh wire
     //skinnedWirePSO = skinnedSolidPSO;
