@@ -24,10 +24,11 @@ void Level::Update(ComPtr<ID3D11Device> &device,
     }
 }
 
-void Level::Render(ComPtr<ID3D11DeviceContext> &context)
+void Level::Render(ComPtr<ID3D11DeviceContext> &context, const bool wired)
 {
     for (auto actor : actors)
     {
+        Engine::Get()->GetRenderer().SetPipelineState(actor->GetPSO(wired));
         actor->Render(context);
     }
 }

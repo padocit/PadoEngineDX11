@@ -1,13 +1,14 @@
 #include <iostream>
 
 #include "Sample_Basic.h"
+#include "Sample_Phong.h"
 #include "Common.h"
 
 using namespace std;
 
 int main()
 {
-    unique_ptr<Engine> sample = make_unique<Sample_Basic>(1024, 1024);
+    unique_ptr<Engine> sample = make_unique<Sample_Phong>(1024, 1024);
 
 	if (!Engine::Create(move(sample)))
 	{

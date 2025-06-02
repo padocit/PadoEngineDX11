@@ -26,7 +26,7 @@ public:
 	bool InitDirect3D(const Resolution& res);
 	bool InitGUI();
 
-	const D3D11Renderer &GetRenderer()
+	D3D11Renderer &GetRenderer()
     {
         return renderer;
     }

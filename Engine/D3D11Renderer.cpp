@@ -104,8 +104,8 @@ void D3D11Renderer::CreateBuffers()
         swapChain->GetBuffer(0, IID_PPV_ARGS(backBuffer.GetAddressOf())));
     ThrowIfFailed(device->CreateRenderTargetView(backBuffer.Get(), NULL,
                                                  backBufferRTV.GetAddressOf()));
-    ThrowIfFailed(device->CheckMultisampleQualityLevels(
-        DXGI_FORMAT_R16G16B16A16_FLOAT, 4, &numQualityLevels));
+    //ThrowIfFailed(device->CheckMultisampleQualityLevels(
+    //    DXGI_FORMAT_R16G16B16A16_FLOAT, 4, &numQualityLevels)); // HDR + post process
 
     CreateDepthBuffers();
 }
@@ -181,10 +181,8 @@ void D3D11Renderer::Render(Level* level)
 
     Prepare(); 
      
-    SetPipelineState(drawAsWire ? Graphics::defaultWirePSO
-                                : Graphics::defaultSolidPSO);
     SetGlobalConsts(globalConstsGPU);
-    level->Render(context);
+    level->Render(context, drawAsWire);
 
     context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), NULL);
 }
@@ -252,5 +250,5 @@ void D3D11Renderer::Prepare()
 
 float D3D11Renderer::GetAspectRatio() const
 {
-    return static_cast<float>(screenWidth) / screenHeight;
+    return float(screenWidth - guiWidth) / screenHeight;
 }

@@ -66,14 +66,17 @@
     <ClCompile Include="Level.cpp">
       <Filter>Level</Filter>
     </ClCompile>
-    <ClCompile Include="D3D11Common.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ModelLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Camera.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D3D11Common.cpp">
+      <Filter>D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="Sample_Phong.cpp">
+      <Filter>Samples</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -122,9 +125,6 @@
     <ClInclude Include="Level.h">
       <Filter>Level</Filter>
     </ClInclude>
-    <ClInclude Include="D3D11Common.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Texture2D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -143,6 +143,12 @@
     <ClInclude Include="Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="D3D11Common.h">
+      <Filter>D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Sample_Phong.h">
+      <Filter>Samples</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="BasicPS.hlsl">
@@ -151,10 +157,14 @@
     <FxCompile Include="BasicVS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="PhongPS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

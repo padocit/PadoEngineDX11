@@ -46,6 +46,7 @@ ComPtr<ID3D11VertexShader> grassVS;
 ComPtr<ID3D11VertexShader> billboardVS;
 
 ComPtr<ID3D11PixelShader> basicPS;
+ComPtr<ID3D11PixelShader> phongPS;
 ComPtr<ID3D11PixelShader> skyboxPS;
 ComPtr<ID3D11PixelShader> combinePS;
 ComPtr<ID3D11PixelShader> bloomDownPS;
@@ -77,6 +78,7 @@ D3D11PSO defaultSolidPSO;
 D3D11PSO skinnedSolidPSO;
 D3D11PSO defaultWirePSO;
 D3D11PSO skinnedWirePSO;
+D3D11PSO phongPSO;
 D3D11PSO stencilMaskPSO;
 D3D11PSO reflectSolidPSO;
 D3D11PSO reflectSkinnedSolidPSO;
@@ -465,6 +467,7 @@ void Graphics::InitShaders(ComPtr<ID3D11Device> &device)
     //    device, L"BillboardVS.hlsl", billboardIEs, billboardVS, billboardIL);
 
     D3D11Utils::CreatePixelShader(device, L"BasicPS.hlsl", basicPS);
+    D3D11Utils::CreatePixelShader(device, L"PhongPS.hlsl", phongPS);
     //D3D11Utils::CreatePixelShader(device, L"NormalPS.hlsl", normalPS);
     //D3D11Utils::CreatePixelShader(device, L"SkyboxPS.hlsl", skyboxPS);
     //D3D11Utils::CreatePixelShader(device, L"CombinePS.hlsl", combinePS);
@@ -505,6 +508,10 @@ void Graphics::InitPipelineStates(ComPtr<ID3D11Device> &device)
     //// Skinned mesh wire
     //skinnedWirePSO = skinnedSolidPSO;
     //skinnedWirePSO.rasterizerState = wireRS;
+
+    // phongPSO
+    phongPSO = defaultSolidPSO;
+    phongPSO.pixelShader = phongPS;
 
     //// stencilMarkPSO;
     //stencilMaskPSO = defaultSolidPSO;

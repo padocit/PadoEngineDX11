@@ -295,9 +295,15 @@ void Actor::UpdateConstantBuffers(ComPtr<ID3D11Device> &device,
     }
 }
 
+void Actor::SetPSO(const D3D11PSO &WirePSO, const D3D11PSO &SolidPSO)
+{
+    wirePSO = WirePSO;
+    solidPSO = SolidPSO;
+}
+
 D3D11PSO &Actor::GetPSO(const bool wired)
 {
-    return wired ? Graphics::defaultWirePSO : Graphics::defaultSolidPSO;
+    return wired ? wirePSO : solidPSO;
 }
 
 D3D11PSO &Actor::GetDepthOnlyPSO()

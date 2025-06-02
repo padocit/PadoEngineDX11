@@ -41,6 +41,8 @@ public:
     void UpdateConstantBuffers(ComPtr<ID3D11Device> &device,
                                ComPtr<ID3D11DeviceContext> &context);
 
+    virtual void SetPSO(const D3D11PSO &WirePSO, const D3D11PSO &SolidPSO);
+
     virtual D3D11PSO &GetPSO(const bool wired);
     virtual D3D11PSO &GetDepthOnlyPSO();
     virtual D3D11PSO &GetReflectPSO(const bool wired);
@@ -71,6 +73,9 @@ public:
     DirectX::BoundingSphere boundingSphere;
 
     string name = "NoName";
+
+    D3D11PSO wirePSO = Graphics::defaultSolidPSO;
+    D3D11PSO solidPSO = Graphics::defaultWirePSO;
 
 private:
     shared_ptr<Mesh> boundingBoxMesh;

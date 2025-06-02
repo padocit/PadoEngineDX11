@@ -1,6 +1,16 @@
 #ifndef __COMMON_HLSLI__
 #define __COMMON_HLSLI__
 
+// 쉐이더에서 include할 내용들은 .hlsli 파일에 작성
+// Properties -> Item Type: Does not participate in build으로 설정
+
+#define MAX_LIGHTS 3 // 쉐이더에서도 #define 사용 가능
+#define LIGHT_OFF 0x00
+#define LIGHT_DIRECTIONAL 0x01
+#define LIGHT_POINT 0x02
+#define LIGHT_SPOT 0x04
+#define LIGHT_SHADOW 0x10
+
 // 샘플러들을 모든 쉐이더에서 공통으로 사용
 SamplerState linearWrapSampler : register(s0);
 SamplerState linearClampSampler : register(s1);
@@ -9,6 +19,27 @@ SamplerComparisonState shadowCompareSampler : register(s3);
 SamplerState pointWrapSampler : register(s4);
 SamplerState linearMirrorSampler : register(s5);
 SamplerState pointClampSampler : register(s6);
+
+
+//static Texture2D shadowMaps[MAX_LIGHTS] = { shadowMap0, shadowMap1, shadowMap2 };
+
+struct Light
+{
+    float3 radiance; // Strength
+    float fallOffStart;
+    float3 direction;
+    float fallOffEnd;
+    float3 position;
+    float spotPower;
+    
+    uint type;
+    float radius;
+    float haloRadius;
+    float haloStrength;
+
+    matrix viewProj;
+    matrix invProj;
+};
 
 // 공용 Constants
 cbuffer GlobalConstants : register(b0)
@@ -28,7 +59,7 @@ cbuffer GlobalConstants : register(b0)
     float lodBias = 2.0f; // 다른 물체들 LodBias
     float globalTime;
     
-    //Light lights[MAX_LIGHTS];
+    Light lights[MAX_LIGHTS];
 };
 
 cbuffer MeshConstants : register(b1)
@@ -45,8 +76,8 @@ cbuffer MeshConstants : register(b1)
 cbuffer MaterialConstants : register(b2)
 {
     float3 albedoFactor; // baseColor
-    float roughnessFactor;
-    float metallicFactor;
+    float roughnessFactor; // ~diffuse(phong)
+    float metallicFactor; // ~specular(phong)
     float3 emissionFactor;
 
     int useAlbedoMap;
@@ -56,7 +87,7 @@ cbuffer MaterialConstants : register(b2)
     int useMetallicMap;
     int useRoughnessMap;
     int useEmissiveMap;
-    float dummy2;
+    float shininess; // phong or dummy
 };
 
 struct VertexShaderInput

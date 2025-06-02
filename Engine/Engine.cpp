@@ -72,7 +72,10 @@ int Engine::Run()
         }
 
         // GUI
+        guiManager.BeginFrame("Scene Control");
         UpdateGUI();
+        guiManager.EndFrame(resolution);
+        //renderer.guiWidth = guiManager.guiWidth;
 
         // Update
         Update(guiManager.GetDeltaTime());
@@ -120,14 +123,10 @@ void Engine::Update(float dt)
 
 void Engine::UpdateGUI()
 {
-    guiManager.BeginFrame("Scene Control");
-
     // TODO: SetGUI
     //ImGui::SliderFloat("Alpha", &renderer.pixelShaderConstData.alpha, 0.0f,
     //                   1.0f);
     // ImGui::...
-
-    guiManager.EndFrame();
 }
 
 void Engine::Render()

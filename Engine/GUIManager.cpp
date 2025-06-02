@@ -9,7 +9,7 @@ bool GUIManager::Initialize(HWND hWnd, ID3D11Device *device,
     ImGuiIO &io = ImGui::GetIO();
     (void)io;
     io.DisplaySize = ImVec2(float(resolution.width), float(resolution.height));
-    ImGui::StyleColorsLight();
+    ImGui::StyleColorsDark();
 
     // Setup Platform/D3D11Renderer backends
     if (!ImGui_ImplDX11_Init(device, context))
@@ -46,8 +46,10 @@ void GUIManager::BeginFrame(const char *title)
                 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 }
 
-void GUIManager::EndFrame()
+void GUIManager::EndFrame(const Resolution &resolution)
 {
+    guiWidth = int(ImGui::GetWindowWidth());
+    ImGui::SetWindowPos(ImVec2(resolution.width - guiWidth, 0.0f));
     ImGui::End();
     ImGui::Render();
 }

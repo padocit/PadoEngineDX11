@@ -18,9 +18,10 @@ using DirectX::SimpleMath::Vector3;
 // DirectX-Graphics-Samples/MiniEngine을 따라서 파일이름 변경
 // __declspec(align(256)) : DX12에서는 256 align (예습)
 
-__declspec(align(256)) struct PixelConstants
+__declspec(align(256)) struct PhongConstants
 {
-    float alpha = 1.0f;
+    int useBlinnPhong = 0;
+    bool useTexture = false;
     DirectX::SimpleMath::Vector3 dummy;
 };
 
@@ -53,7 +54,7 @@ __declspec(align(256)) struct MaterialConstants
     int useMetallicMap = 0;
     int useRoughnessMap = 0;
     int useEmissiveMap = 0;
-    float dummy = 0.0f;
+    float shininess = 0.0f; // phong or dummy
 
     // 참고 flags 구현
     /* union {

@@ -16,7 +16,7 @@ public:
     void Shutdown();
 
     void BeginFrame(const char *title);
-    void EndFrame();
+    void EndFrame(const Resolution &resolution);
     void Render(); // DX11 RenderDrawData
 
     inline float GetDeltaTime()
@@ -24,6 +24,6 @@ public:
         return ImGui::GetIO().DeltaTime;
     }
 
-private:
-    // update
+public:
+    //int guiWidth = 0;
 };

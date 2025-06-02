@@ -1,7 +1,6 @@
 #pragma once
 
 #include "D3D11Common.h"
-#include "IRenderer.h"
 #include "Camera.h"
 #include "Common.h"
 #include "ConstantBuffer.h"
@@ -11,30 +10,29 @@
 
 using Microsoft::WRL::ComPtr;
 
-class D3D11Renderer : public IRenderer
+class D3D11Renderer /* : public IRenderer*/
 {
 public:
 	// Init
-    bool Initialize(const Resolution &resolution, HWND hWnd) override;
+    bool Initialize(const Resolution &resolution, HWND hWnd);
 
 	// Shutdown (임시: 필요 시 작성)
-    void Shutdown() override {}
+    void Shutdown() {}
 
 	// Update & Render
-    void Update(Level* level, Camera* camera, float dt) override;
+    void Update(Level* level, Camera* camera, float dt);
     //virtual void UpdateLights(float dt);
     //virtual void RenderDepthOnly();
     //virtual void RenderShadowMaps();
     //virtual void RenderOpaqueObjects();
     //virtual void RenderMirror();
-    void Render(Level* level) override;
-    void SwapBuffer() override;
-
+    void Render(Level* level);
+    void SwapBuffer();
 
 	// Screen
-    void SetScreenSize(const Resolution &resolution) override;
-    void SetMainViewPort() override;
-    float GetAspectRatio() const override;
+    void SetScreenSize(const Resolution &resolution);
+    void SetMainViewPort();
+    float GetAspectRatio() const;
 
 	// Resources
     ComPtr<ID3D11Device>& GetDevice()
@@ -60,6 +58,10 @@ public:
 
     void Prepare();
 
+public:
+    GlobalConstants globalConstsCPU;
+    //int guiWidth = 0;
+
 private:
 	// Properties
 	int screenWidth;
@@ -69,6 +71,7 @@ private:
 	UINT numQualityLevels = 0;
 	bool drawAsWire = false;
     float clearColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+    
 
 	// Backbuffer
 	DXGI_FORMAT backBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -86,7 +89,6 @@ private:
 	ComPtr<ID3D11RenderTargetView> backBufferRTV;
 
 	// cbuffer
-    GlobalConstants globalConstsCPU;
     ComPtr<ID3D11Buffer> globalConstsGPU;
 };
 
