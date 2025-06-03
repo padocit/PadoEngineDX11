@@ -5,7 +5,7 @@
 using namespace std;
 
 Sample_Phong::Sample_Phong() 
-    : Engine(1600, 900)
+    : Engine()
 {
 }
 
@@ -17,12 +17,14 @@ bool Sample_Phong::InitLevel()
     // 박스
     { 
         MeshData boxData = GeometryGenerator::MakeBox(0.5f);
-        Vector3 center(0.0f, 0.0f, 1.0f);
+        boxPos = Vector3(0.0f, 0.0f, 1.0f);
+        boxScale = Vector3(1.0f);
         boxData.albedoTextureFilename = "../Assets/Textures/box.png";
 
         box = make_shared<Actor>(
             renderer.GetDevice(), renderer.GetContext(), vector{boxData});
-        box->UpdateWorldRow(Matrix::CreateTranslation(center));
+        box->UpdateWorldRow(Matrix::CreateScale(boxScale) *
+                            Matrix::CreateTranslation(boxPos));
         box->materialConsts.GetCpu().albedoFactor = Vector3(0.1f); // gray
         box->UpdateConstantBuffers(renderer.GetDevice(),
                                         renderer.GetContext());
@@ -67,12 +69,16 @@ void Sample_Phong::UpdateGUI()
         phongConstsCPU.useBlinnPhong = 1;
     }
 
+    ImGui::SliderFloat3("Box Scale", &boxScale.x, 1.0f, 5.0f);
+
     ImGui::SliderFloat3("Ambient", &box->materialConsts.GetCpu().albedoFactor.x,
                         0.0f, 1.0f);
     ImGui::SliderFloat("Diffuse", &box->materialConsts.GetCpu().roughnessFactor,
                        0.0f, 1.0f);
     ImGui::SliderFloat("Specular", &box->materialConsts.GetCpu().metallicFactor,
                        0.0f, 1.0f);
+    ImGui::SliderFloat("Shininess", &box->materialConsts.GetCpu().shininess,
+                       1.0f, 256.0f);
 
 
     if (ImGui::RadioButton("Directional Light", lightType == 0))
@@ -110,6 +116,10 @@ void Sample_Phong::UpdateGUI()
 
 void Sample_Phong::Update(float dt)
 {
+
+    box->UpdateWorldRow(Matrix::CreateScale(boxScale) *
+                        Matrix::CreateTranslation(boxPos));
+
     // 여러 개 조명 사용 예시
     auto *lights = Engine::Get()->GetRenderer().globalConstsCPU.lights;
 

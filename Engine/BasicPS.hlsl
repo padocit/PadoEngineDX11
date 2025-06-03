@@ -10,7 +10,9 @@ struct PixelShaderOutput
 PixelShaderOutput main(PixelShaderInput input)
 {
     PixelShaderOutput output;
-    output.pixelColor = 2.0 * albedoTex.Sample(linearWrapSampler, input.texcoord);
+    output.pixelColor = useAlbedoMap ? 
+            2.0 * albedoTex.Sample(linearWrapSampler, input.texcoord)
+            : float4(albedoFactor, 1.0);
 
     return output;
 }

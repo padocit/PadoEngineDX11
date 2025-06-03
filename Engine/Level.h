@@ -11,6 +11,7 @@ public:
     virtual ~Level();
 
     void AddActor(std::shared_ptr<Actor> newActor);
+    void SetSkybox(std::shared_ptr<Actor> newSkybox);
 
     virtual void Update(ComPtr<ID3D11Device> &device,
                         ComPtr<ID3D11DeviceContext> &context);
@@ -18,5 +19,5 @@ public:
 
 protected:
     std::vector<std::shared_ptr<Actor>> actors;
-
+    shared_ptr<Actor> skybox;
 };

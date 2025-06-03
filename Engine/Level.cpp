@@ -1,6 +1,11 @@
 #include "Level.h"
 #include "Actor.h"
 #include "Engine.h"
+#include "GeometryGenerator.h"
+
+#include <memory>
+
+using namespace std;
 
 Level::Level()
 {
@@ -15,6 +20,11 @@ void Level::AddActor(std::shared_ptr<Actor> newActor)
     actors.push_back(newActor);
 }
 
+void Level::SetSkybox(std::shared_ptr<Actor> newSkybox)
+{
+    skybox = newSkybox;
+}
+
 void Level::Update(ComPtr<ID3D11Device> &device,
                    ComPtr<ID3D11DeviceContext> &context)
 {
@@ -26,6 +36,12 @@ void Level::Update(ComPtr<ID3D11Device> &device,
 
 void Level::Render(ComPtr<ID3D11DeviceContext> &context, const bool wired)
 {
+    if (skybox)
+    {
+        Engine::Get()->GetRenderer().SetPipelineState(skybox->GetPSO(wired));
+        skybox->Render(context);
+    }
+
     for (auto &actor : actors)
     {
         Engine::Get()->GetRenderer().SetPipelineState(actor->GetPSO(wired));

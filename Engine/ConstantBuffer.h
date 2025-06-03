@@ -54,7 +54,7 @@ __declspec(align(256)) struct MaterialConstants
     int useMetallicMap = 0;
     int useRoughnessMap = 0;
     int useEmissiveMap = 0;
-    float shininess = 0.0f; // phong or dummy
+    float shininess = 1.0f; // phong or dummy
 
     // 참고 flags 구현
     /* union {
@@ -111,7 +111,7 @@ __declspec(align(256)) struct GlobalConstants
     Matrix invView;
 
     Vector3 eyeWorld;
-    float strengthIBL = 0.0f;
+    float strengthIBL = 1.0f;
 
     int textureToDraw = 0;   // 0: Env, 1: Specular, 2: Irradiance, 그외: 검은색
     float envLodBias = 0.0f; // 환경맵 LodBias

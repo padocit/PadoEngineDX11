@@ -2,13 +2,14 @@
 
 #include "Sample_Basic.h"
 #include "Sample_Phong.h"
+#include "Sample_IBL.h"
 #include "Common.h"
 
 using namespace std;
 
 int main()
 {
-    unique_ptr<Engine> sample = make_unique<Sample_Phong>();
+    unique_ptr<Engine> sample = make_unique<Sample_IBL>();
 
 	if (!Engine::Create(move(sample)))
 	{

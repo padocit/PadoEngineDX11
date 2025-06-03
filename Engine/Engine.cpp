@@ -129,6 +129,24 @@ void Engine::UpdateGUI()
     // 공통으로 쓰는 GUI
     ImGui::Checkbox("FPV (F key)", &camera.useFirstPersonView);
     ImGui::Checkbox("Wireframe", &renderer.drawAsWire);
+
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    if (ImGui::TreeNode("Skybox"))
+    {
+        ImGui::SliderFloat("Strength", &renderer.globalConstsCPU.strengthIBL, 0.0f,
+                           2.0f);
+        //ImGui::RadioButton("Env", &renderer.globalConstsCPU.textureToDraw, 0);
+        //ImGui::SameLine();
+        //ImGui::RadioButton("Specular", &renderer.globalConstsCPU.textureToDraw,
+        //                   1);
+        //ImGui::SameLine();
+        //ImGui::RadioButton("Irradiance",
+        //                   &renderer.globalConstsCPU.textureToDraw, 2);
+        ImGui::SliderFloat("EnvLodBias", &renderer.globalConstsCPU.envLodBias,
+                           0.0f,
+                           10.0f);
+        ImGui::TreePop();
+    }
 }
 
 void Engine::Render()

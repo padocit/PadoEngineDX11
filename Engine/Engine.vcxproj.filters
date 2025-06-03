@@ -78,6 +78,9 @@
     <ClCompile Include="Sample_Phong.cpp">
       <Filter>Samples</Filter>
     </ClCompile>
+    <ClCompile Include="Sample_IBL.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine.h">
@@ -149,6 +152,9 @@
     <ClInclude Include="Sample_Phong.h">
       <Filter>Samples</Filter>
     </ClInclude>
+    <ClInclude Include="Sample_IBL.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="BasicPS.hlsl">
@@ -167,6 +173,12 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="NormalVS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="SkyboxPS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="SkyboxVS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

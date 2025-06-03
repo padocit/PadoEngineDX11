@@ -19,4 +19,7 @@ private:
     shared_ptr<Actor> box;
     PhongConstants phongConstsCPU;
     ComPtr<ID3D11Buffer> phongConstsGPU;
+
+    Vector3 boxPos;
+    Vector3 boxScale;
 };

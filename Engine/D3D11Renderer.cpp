@@ -192,11 +192,11 @@ void D3D11Renderer::Render(Level* level)
                              Graphics::sampleStates.data());
     
     // 공통으로 사용할 텍스춰들: "Common.hlsli"에서 register(t10)부터 시작
-    //vector<ID3D11ShaderResourceView *> commonSRVs = {
-    //    m_envSRV.Get(), m_specularSRV.Get(), m_irradianceSRV.Get(),
-    //    m_brdfSRV.Get()};
-    //m_context->PSSetShaderResources(10, UINT(commonSRVs.size()),
-    //                                commonSRVs.data());
+    vector<ID3D11ShaderResourceView *> commonSRVs = {
+        envSRV.Get(), specularSRV.Get(), irradianceSRV.Get(),
+        brdfSRV.Get()};
+    context->PSSetShaderResources(10, UINT(commonSRVs.size()),
+                                    commonSRVs.data());
 
     Prepare(); 
      
@@ -209,6 +209,23 @@ void D3D11Renderer::Render(Level* level)
 void D3D11Renderer::SwapBuffer()
 {
     swapChain->Present(1, 0); // 1: VSync
+}
+
+void D3D11Renderer::InitCubemaps(wstring basePath, wstring envFilename,
+                                 wstring specularFilename,
+                                 wstring irradianceFilename,
+                                 wstring brdfFilename)
+{
+    // BRDF LookUp Table은 CubeMap이 아니라 2D 텍스춰 입니다.
+    D3D11Utils::CreateDDSTexture(device, (basePath + envFilename).c_str(),
+                                 true, envSRV);
+    D3D11Utils::CreateDDSTexture(
+        device, (basePath + specularFilename).c_str(), true, specularSRV);
+    D3D11Utils::CreateDDSTexture(device,
+                                 (basePath + irradianceFilename).c_str(), true,
+                                 irradianceSRV);
+    D3D11Utils::CreateDDSTexture(device, (basePath + brdfFilename).c_str(),
+                                 false, brdfSRV);
 }
 
 void D3D11Renderer::UpdateGlobalConstants(const float &dt,

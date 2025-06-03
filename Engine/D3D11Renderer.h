@@ -54,6 +54,11 @@ public:
 public:
     bool InitDeviceAndSwapChain(HWND hWnd);
     
+
+    void InitCubemaps(wstring basePath, wstring envFilename,
+                      wstring specularFilename, wstring irradianceFilename,
+                      wstring brdfFilename);
+
     void UpdateGlobalConstants(const float &dt, const Vector3 &eyeWorld,
                                const Matrix &viewRow, const Matrix &projRow);
                                //const Matrix &refl = Matrix());
@@ -79,6 +84,12 @@ private:
 	UINT numQualityLevels = 0;
     float clearColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
     
+    // 공용 텍스처(IBL)
+    ComPtr<ID3D11ShaderResourceView> envSRV;
+    ComPtr<ID3D11ShaderResourceView> irradianceSRV;
+    ComPtr<ID3D11ShaderResourceView> specularSRV;
+    ComPtr<ID3D11ShaderResourceView> brdfSRV;
+
 
 	// Backbuffer
 	DXGI_FORMAT backBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
