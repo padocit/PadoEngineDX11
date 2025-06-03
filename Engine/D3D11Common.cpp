@@ -78,7 +78,8 @@ D3D11PSO defaultSolidPSO;
 D3D11PSO skinnedSolidPSO;
 D3D11PSO defaultWirePSO;
 D3D11PSO skinnedWirePSO;
-D3D11PSO phongPSO;
+D3D11PSO phongSolidPSO;
+D3D11PSO phongWirePSO;
 D3D11PSO stencilMaskPSO;
 D3D11PSO reflectSolidPSO;
 D3D11PSO reflectSkinnedSolidPSO;
@@ -450,8 +451,8 @@ void Graphics::InitShaders(ComPtr<ID3D11Device> &device)
     //D3D11Utils::CreateVertexShaderAndInputLayout(
     //    device, L"BasicVS.hlsl", skinnedIEs, skinnedVS, skinnedIL,
     //    vector<D3D_SHADER_MACRO>{{"SKINNED", "1"}, {NULL, NULL}});
-    //D3D11Utils::CreateVertexShaderAndInputLayout(device, L"NormalVS.hlsl",
-    //                                             basicIEs, normalVS, basicIL);
+    D3D11Utils::CreateVertexShaderAndInputLayout(device, L"NormalVS.hlsl",
+                                                 basicIEs, normalVS, basicIL);
     //D3D11Utils::CreateVertexShaderAndInputLayout(
     //    device, L"SamplingVS.hlsl", samplingIED, samplingVS, samplingIL);
     //D3D11Utils::CreateVertexShaderAndInputLayout(device, L"SkyboxVS.hlsl",
@@ -468,7 +469,7 @@ void Graphics::InitShaders(ComPtr<ID3D11Device> &device)
 
     D3D11Utils::CreatePixelShader(device, L"BasicPS.hlsl", basicPS);
     D3D11Utils::CreatePixelShader(device, L"PhongPS.hlsl", phongPS);
-    //D3D11Utils::CreatePixelShader(device, L"NormalPS.hlsl", normalPS);
+    D3D11Utils::CreatePixelShader(device, L"NormalPS.hlsl", normalPS);
     //D3D11Utils::CreatePixelShader(device, L"SkyboxPS.hlsl", skyboxPS);
     //D3D11Utils::CreatePixelShader(device, L"CombinePS.hlsl", combinePS);
     //D3D11Utils::CreatePixelShader(device, L"BloomDownPS.hlsl", bloomDownPS);
@@ -483,7 +484,7 @@ void Graphics::InitShaders(ComPtr<ID3D11Device> &device)
     //D3D11Utils::CreatePixelShader(device, L"VolumetricFirePS.hlsl",
     //                              volumetricFirePS);
 
-    //D3D11Utils::CreateGeometryShader(device, L"NormalGS.hlsl", normalGS);
+    D3D11Utils::CreateGeometryShader(device, L"NormalGS.hlsl", normalGS);
     //D3D11Utils::CreateGeometryShader(device, L"BillboardGS.hlsl", billboardGS);
 }
 
@@ -509,10 +510,14 @@ void Graphics::InitPipelineStates(ComPtr<ID3D11Device> &device)
     //skinnedWirePSO = skinnedSolidPSO;
     //skinnedWirePSO.rasterizerState = wireRS;
 
-    // phongPSO
-    phongPSO = defaultSolidPSO;
-    phongPSO.pixelShader = phongPS;
+    // phongSolidPSO
+    phongSolidPSO = defaultSolidPSO;
+    phongSolidPSO.pixelShader = phongPS;
 
+    //phongWirePSO
+    phongWirePSO = phongSolidPSO;
+    phongWirePSO.rasterizerState = wireRS;
+    
     //// stencilMarkPSO;
     //stencilMaskPSO = defaultSolidPSO;
     //stencilMaskPSO.depthStencilState = maskDSS;
@@ -572,12 +577,12 @@ void Graphics::InitPipelineStates(ComPtr<ID3D11Device> &device)
     //reflectSkyboxWirePSO.rasterizerState = wireCcwRS;
     //reflectSkyboxWirePSO.stencilRef = 1;
 
-    //// normalsPSO
-    //normalsPSO = defaultSolidPSO;
-    //normalsPSO.vertexShader = normalVS;
-    //normalsPSO.geometryShader = normalGS;
-    //normalsPSO.pixelShader = normalPS;
-    //normalsPSO.primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
+    // normalsPSO
+    normalsPSO = defaultSolidPSO;
+    normalsPSO.vertexShader = normalVS;
+    normalsPSO.geometryShader = normalGS;
+    normalsPSO.pixelShader = normalPS;
+    normalsPSO.primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
 
     //// depthOnlyPSO
     //depthOnlyPSO = defaultSolidPSO;

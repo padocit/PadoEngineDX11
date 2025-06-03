@@ -68,6 +68,7 @@ public:
 public:
     GlobalConstants globalConstsCPU;
     int guiWidth = 0;
+    bool drawAsWire = false;
 
 private:
 	// Properties
@@ -76,7 +77,6 @@ private:
 	float aspectRatio;
 	bool useMSAA = true;
 	UINT numQualityLevels = 0;
-	bool drawAsWire = false;
     float clearColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
     
 

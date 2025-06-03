@@ -17,17 +17,19 @@ bool Sample_Phong::InitLevel()
     // 박스
     { 
         MeshData boxData = GeometryGenerator::MakeBox(0.5f);
+        Vector3 center(0.0f, 0.0f, 1.0f);
         boxData.albedoTextureFilename = "../Assets/Textures/box.png";
 
         box = make_shared<Actor>(
             renderer.GetDevice(), renderer.GetContext(), vector{boxData});
+        box->UpdateWorldRow(Matrix::CreateTranslation(center));
         box->materialConsts.GetCpu().albedoFactor = Vector3(0.1f); // gray
         box->UpdateConstantBuffers(renderer.GetDevice(),
                                         renderer.GetContext());
         box->name = "Box";
 
         // PSO
-        box->SetPSO(Graphics::defaultWirePSO, Graphics::phongPSO);
+        box->SetPSO(Graphics::phongWirePSO, Graphics::phongSolidPSO);
 
         level.AddActor(box);
     }
@@ -53,6 +55,7 @@ void Sample_Phong::UpdateGUI()
 
     // Material(Actor), useBlinnPhong (phongConsts) GUI 연결
     ImGui::Checkbox("Use texture", &phongConstsCPU.useTexture);
+    ImGui::Checkbox("Draw Normals", &box->drawNormals);
 
     if (ImGui::RadioButton("Phong", phongConstsCPU.useBlinnPhong == 0))
     {

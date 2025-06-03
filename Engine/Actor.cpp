@@ -370,8 +370,10 @@ void Actor::UpdateAnimation(ComPtr<ID3D11DeviceContext> &context, int clipId,
     exit(-1);
 }
 
-void Actor::RenderNormals(ComPtr<ID3D11DeviceContext> &context)
+void Actor::RenderNormals()
 {
+    ComPtr<ID3D11DeviceContext> &context =
+        Engine::Get()->GetRenderer().GetContext();
     for (const auto &mesh : meshes)
     {
         ID3D11Buffer *constBuffers[2] = {mesh->meshConstsGPU.Get(),

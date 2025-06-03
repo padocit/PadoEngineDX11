@@ -26,9 +26,16 @@ void Level::Update(ComPtr<ID3D11Device> &device,
 
 void Level::Render(ComPtr<ID3D11DeviceContext> &context, const bool wired)
 {
-    for (auto actor : actors)
+    for (auto &actor : actors)
     {
         Engine::Get()->GetRenderer().SetPipelineState(actor->GetPSO(wired));
         actor->Render(context);
+    }
+
+    Engine::Get()->GetRenderer().SetPipelineState(Graphics::normalsPSO);
+    for (auto& actor : actors)
+    {
+        if (actor->drawNormals)
+            actor->RenderNormals();
     }
 }

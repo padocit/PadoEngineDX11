@@ -128,6 +128,7 @@ void Engine::UpdateGUI()
 {
     // 공통으로 쓰는 GUI
     ImGui::Checkbox("FPV (F key)", &camera.useFirstPersonView);
+    ImGui::Checkbox("Wireframe", &renderer.drawAsWire);
 }
 
 void Engine::Render()

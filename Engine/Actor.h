@@ -6,6 +6,7 @@
 #include "ConstantBuffer.h"
 #include "D3D11Utils.h"
 #include "D3D11Common.h"
+#include "Engine.h"
 #include "Mesh.h"
 #include "MeshData.h"
 
@@ -50,7 +51,7 @@ public:
     virtual void Render(ComPtr<ID3D11DeviceContext> &context);
     virtual void UpdateAnimation(ComPtr<ID3D11DeviceContext> &context,
                                  int clipId, int frame);
-    virtual void RenderNormals(ComPtr<ID3D11DeviceContext> &context);
+    virtual void RenderNormals();
     virtual void RenderWireBoundingBox(ComPtr<ID3D11DeviceContext> &context);
     virtual void RenderWireBoundingSphere(ComPtr<ID3D11DeviceContext> &context);
     void UpdateWorldRow(const Matrix &newWorldRow);
