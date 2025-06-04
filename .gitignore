@@ -361,10 +361,4 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-/Assets/Textures/blender_uv_grid_2k.png
-/Assets/Textures/Cubemaps/Atrium_diffuseIBL.dds
-/Assets/Textures/Cubemaps/Atrium_specularIBL.dds
-/Assets/Textures/Cubemaps/DGarden_diffuseIBL.dds
-/Assets/Textures/Cubemaps/DGarden_specularIBL.dds
-/Assets/Textures/Cubemaps/HDRI
-/Assets/Textures
+/Assets/
