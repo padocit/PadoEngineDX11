@@ -16,9 +16,9 @@ bool Sample_IBL::InitLevel()
 
     // Cubemap
     {
-        renderer.InitCubemaps(L"../Assets/Textures/Cubemaps/HDRI/",
-                              L"SampleEnvHDR.dds", L"SampleSpecularHDR.dds",
-                              L"SampleDiffuseHDR.dds", L"SampleBrdf.dds");
+        renderer.InitCubemaps(L"../Assets/Textures/Cubemaps/",
+                              L"Atrium_specularIBL.dds", L"Atrium_specularIBL.dds",
+                              L"Atrium_diffuseIBL.dds", L"Atrium_diffuseIBL.dds");
 
         // 환경 박스 초기화
         MeshData skyboxMesh = GeometryGenerator::MakeBox(40.0f);
@@ -45,10 +45,17 @@ bool Sample_IBL::InitLevel()
                                       renderer.GetContext());
         sphere->name = "sphere";
 
-        sphere->SetPSO(Graphics::defaultWirePSO, Graphics::defaultSolidPSO);
+        sphere->SetPSO(Graphics::defaultWirePSO, Graphics::iblSolidPSO);
 
         level.AddActor(sphere);
     }
+
+    // cbuffer
+    iblConstsCPU.fresnelR0 = Vector3(1.0, 0.71, 0.29); // Gold
+    D3D11Utils::CreateConstBuffer(Engine::Get()->GetRenderer().GetDevice(),
+                                  iblConstsCPU, iblConstsGPU);
+    Engine::Get()->GetRenderer().GetContext()->PSSetConstantBuffers(
+        3, 1, iblConstsGPU.GetAddressOf());
 
     return true;
 }
@@ -57,10 +64,32 @@ void Sample_IBL::UpdateGUI()
 {
     Engine::UpdateGUI();
     ImGui::SliderInt("Use texture", &sphere->materialConsts.GetCpu().useAlbedoMap, 0, 1);
+    ImGui::Checkbox("Draw normals", &sphere->drawNormals);
+
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    if (ImGui::TreeNode("Sample IBL"))
+    {
+        ImGui::SliderFloat3("FresnelR0", &iblConstsCPU.fresnelR0.x, 0.0f, 1.0f);
+        ImGui::SliderFloat("Diffuse",
+                           &sphere->materialConsts.GetCpu().roughnessFactor,
+                           0.0f, 3.0f);
+        ImGui::SliderFloat("Specular",
+                           &sphere->materialConsts.GetCpu().metallicFactor,
+                           0.0f, 3.0f);
+        ImGui::SliderFloat("Shininess",
+                           &sphere->materialConsts.GetCpu().shininess, 0.01f,
+                           25.0f);
+
+        ImGui::TreePop();
+    }
 }
 
 void Sample_IBL::Update(float dt)
 {
+    // cbuffer
+    D3D11Utils::UpdateBuffer(Engine::Get()->GetRenderer().GetContext(),
+                             iblConstsCPU, iblConstsGPU);
+
     Engine::Update(dt);
 }
 

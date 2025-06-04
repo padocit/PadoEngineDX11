@@ -181,6 +181,9 @@
     <FxCompile Include="SkyboxVS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="IblPS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli">

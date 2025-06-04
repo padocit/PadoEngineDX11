@@ -2,6 +2,12 @@
 
 #include "Engine.h"
 
+__declspec(align(256)) struct IblConstants
+{
+    DirectX::SimpleMath::Vector3 fresnelR0;
+    float dummy;
+};
+
 class Sample_IBL : public Engine
 {
 public:
@@ -14,4 +20,6 @@ public:
 
 private:
     shared_ptr<Actor> sphere;
+    IblConstants iblConstsCPU;
+    ComPtr<ID3D11Buffer> iblConstsGPU;
 };

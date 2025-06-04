@@ -1,5 +1,12 @@
 #pragma once
 #include "Engine.h"
+
+__declspec(align(256)) struct SampleConstants
+{
+    DirectX::SimpleMath::Vector3 sampleValues;
+    float dummy;
+};
+
 class Sample_TEMPLATE : public Engine
 {
 public:
@@ -11,4 +18,7 @@ public:
     virtual void Render() override;
 
 private:
+    shared_ptr<Actor> sampleActor;
+    SampleConstants sampleConstsCPU;
+    ComPtr<ID3D11Buffer> sampleConstsGPU;
 };
