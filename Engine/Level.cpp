@@ -36,6 +36,7 @@ void Level::Update(ComPtr<ID3D11Device> &device,
 
 void Level::Render(ComPtr<ID3D11DeviceContext> &context, const bool wired)
 {
+    // @Refactor: skybox를 그냥 actors 포함
     if (skybox)
     {
         Engine::Get()->GetRenderer().SetPipelineState(skybox->GetPSO(wired));

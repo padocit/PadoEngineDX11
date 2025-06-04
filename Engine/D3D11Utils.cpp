@@ -538,8 +538,8 @@ void D3D11Utils::CreateTexture(ComPtr<ID3D11Device> &device,
 
     int width = 0, height = 0;
     std::vector<uint8_t> image;
-    DXGI_FORMAT pixelFormat =
-        usSRGB ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
+    DXGI_FORMAT pixelFormat = usSRGB ? DXGI_FORMAT_R8G8B8A8_UNORM/*_SRGB*/
+                                     : DXGI_FORMAT_R8G8B8A8_UNORM; // TODO:
 
     string ext(filename.end() - 3, filename.end());
     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);

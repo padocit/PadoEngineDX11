@@ -79,7 +79,10 @@
       <Filter>Samples</Filter>
     </ClCompile>
     <ClCompile Include="Sample_IBL.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Samples</Filter>
+    </ClCompile>
+    <ClCompile Include="Sample_Mipmap.cpp">
+      <Filter>Samples</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -153,7 +156,10 @@
       <Filter>Samples</Filter>
     </ClInclude>
     <ClInclude Include="Sample_IBL.h">
-      <Filter>Header Files</Filter>
+      <Filter>Samples</Filter>
+    </ClInclude>
+    <ClInclude Include="Sample_Mipmap.h">
+      <Filter>Samples</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

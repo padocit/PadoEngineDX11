@@ -11,7 +11,7 @@ PixelShaderOutput main(PixelShaderInput input)
 {
     PixelShaderOutput output;
     output.pixelColor = useAlbedoMap ? 
-            2.0 * albedoTex.Sample(linearWrapSampler, input.texcoord)
+            3.0 * albedoTex.Sample(linearWrapSampler, input.texcoord)
             : float4(albedoFactor, 1.0);
 
     return output;

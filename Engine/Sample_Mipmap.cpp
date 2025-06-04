@@ -11,6 +11,9 @@ Sample_Mipmap::Sample_Mipmap()
 
 bool Sample_Mipmap::InitLevel()
 {
+    Engine::camera.Reset(Vector3(0.0f, 0.0f, -1.0f), 0.0f, 0.0f);
+    Engine::InitLevel();
+
     // skybox
     {
         renderer.InitCubemaps(
@@ -18,7 +21,6 @@ bool Sample_Mipmap::InitLevel()
             L"DGarden_specularIBL.dds", L"DGarden_diffuseIBL.dds",
             L"DGarden_diffuseIBL.dds");
 
-        // 환경 박스 초기화
         MeshData skyboxMesh = GeometryGenerator::MakeBox(40.0f);
         std::reverse(skyboxMesh.indices.begin(), skyboxMesh.indices.end());
         shared_ptr<Actor> skybox = make_shared<Actor>(
@@ -38,7 +40,6 @@ bool Sample_Mipmap::InitLevel()
         sphere = make_shared<Actor>(renderer.GetDevice(), renderer.GetContext(),
                                     vector{sphereData});
         sphere->UpdateWorldRow(Matrix::CreateTranslation(center));
-        sphere->materialConsts.GetCpu().albedoFactor = Vector3(1.0f); // white
         sphere->UpdateConstantBuffers(renderer.GetDevice(),
                                       renderer.GetContext());
         sphere->name = "sphere";
@@ -48,7 +49,27 @@ bool Sample_Mipmap::InitLevel()
         level.AddActor(sphere);
     }
 
-    Engine::InitLevel();
+    // Ground
+    {
+        MeshData groundData = GeometryGenerator::MakeSquare(20.0f, Vector2(8.0f));
+        groundData.albedoTextureFilename = "../Assets/Textures/blender_uv_grid_2k.png";
+
+        shared_ptr<Actor> ground = make_shared<Actor>(renderer.GetDevice(), renderer.GetContext(),
+                                    vector{groundData});
+        ground->materialConsts.GetCpu().albedoFactor = Vector3(1.0f);
+        ground->name = "ground";
+
+        Vector3 position = Vector3(0.0f, -0.5f, 2.0f);
+        ground->UpdateWorldRow(Matrix::CreateRotationX(3.141592f * 0.5f) *
+                                 Matrix::CreateTranslation(position));
+
+        ground->SetPSO(Graphics::defaultWirePSO, Graphics::defaultSolidPSO);
+        
+        level.AddActor(ground);
+    }
+
+    // cbuffer
+
     return true;
 }
 
@@ -61,7 +82,7 @@ void Sample_Mipmap::UpdateGUI()
                      &sphere->materialConsts.GetCpu().useAlbedoMap, 0, 1);
 
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::TreeNode("Sample"))
+    if (ImGui::TreeNode("Sample Mipmap"))
     {
         ImGui::TreePop();
     }
@@ -70,6 +91,8 @@ void Sample_Mipmap::UpdateGUI()
 
 void Sample_Mipmap::Update(float dt)
 {
+    // cbuffer
+
     Engine::Update(dt);
 }
 
