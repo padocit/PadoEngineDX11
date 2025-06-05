@@ -48,6 +48,7 @@ ComPtr<ID3D11VertexShader> billboardVS;
 ComPtr<ID3D11PixelShader> basicPS;
 ComPtr<ID3D11PixelShader> phongPS;
 ComPtr<ID3D11PixelShader> iblPS;
+ComPtr<ID3D11PixelShader> mipmapPS;
 ComPtr<ID3D11PixelShader> skyboxPS;
 ComPtr<ID3D11PixelShader> combinePS;
 ComPtr<ID3D11PixelShader> bloomDownPS;
@@ -82,6 +83,7 @@ D3D11PSO skinnedWirePSO;
 D3D11PSO phongSolidPSO;
 D3D11PSO phongWirePSO;
 D3D11PSO iblSolidPSO;
+D3D11PSO mipmapSolidPSO;
 D3D11PSO stencilMaskPSO;
 D3D11PSO reflectSolidPSO;
 D3D11PSO reflectSkinnedSolidPSO;
@@ -474,6 +476,7 @@ void Graphics::InitShaders(ComPtr<ID3D11Device> &device)
     D3D11Utils::CreatePixelShader(device, L"NormalPS.hlsl", normalPS);
     D3D11Utils::CreatePixelShader(device, L"SkyboxPS.hlsl", skyboxPS);
     D3D11Utils::CreatePixelShader(device, L"IblPS.hlsl", iblPS);
+    D3D11Utils::CreatePixelShader(device, L"MipmapPS.hlsl", mipmapPS);
     //D3D11Utils::CreatePixelShader(device, L"CombinePS.hlsl", combinePS);
     //D3D11Utils::CreatePixelShader(device, L"BloomDownPS.hlsl", bloomDownPS);
     //D3D11Utils::CreatePixelShader(device, L"BloomUpPS.hlsl", bloomUpPS);
@@ -524,6 +527,10 @@ void Graphics::InitPipelineStates(ComPtr<ID3D11Device> &device)
     // iblSolidPSO
     iblSolidPSO = defaultSolidPSO;
     iblSolidPSO.pixelShader = iblPS;
+
+    // mipmapSolidPSO
+    mipmapSolidPSO = defaultSolidPSO;
+    mipmapSolidPSO.pixelShader = mipmapPS;
 
     //// stencilMarkPSO;
     //stencilMaskPSO = defaultSolidPSO;

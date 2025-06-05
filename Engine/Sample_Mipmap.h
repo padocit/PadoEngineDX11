@@ -3,6 +3,12 @@
 
 #include "Engine.h"
 
+__declspec(align(256)) struct MipmapConstants
+{
+    float lod;
+    DirectX::SimpleMath::Vector3 dummy;
+};
+
 class Sample_Mipmap : public Engine
 {
 public:
@@ -15,4 +21,6 @@ public:
 
 private:
     shared_ptr<Actor> sphere;
+    MipmapConstants mipmapConstsCPU;
+    ComPtr<ID3D11Buffer> mipmapConstsGPU;
 };

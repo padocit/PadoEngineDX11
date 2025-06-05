@@ -31,7 +31,7 @@ bool Sample_Mipmap::InitLevel()
         level.SetSkybox(skybox);
     }
 
-    // Sphere
+    // Sphere: SampleLevel() - Manual LOD
     {
         MeshData sphereData = GeometryGenerator::MakeSphere(0.3f, 100, 100);
         Vector3 center = Vector3(0.0f, 0.0f, 1.0f);
@@ -44,12 +44,12 @@ bool Sample_Mipmap::InitLevel()
                                       renderer.GetContext());
         sphere->name = "sphere";
 
-        sphere->SetPSO(Graphics::defaultWirePSO, Graphics::defaultSolidPSO);
+        sphere->SetPSO(Graphics::defaultWirePSO, Graphics::mipmapSolidPSO);
 
         level.AddActor(sphere);
     }
 
-    // Ground
+    // Ground: Sample() - Auto LOD
     {
         MeshData groundData = GeometryGenerator::MakeSquare(20.0f, Vector2(8.0f));
         groundData.albedoTextureFilename = "../Assets/Textures/blender_uv_grid_2k.png";
@@ -66,9 +66,14 @@ bool Sample_Mipmap::InitLevel()
         ground->SetPSO(Graphics::defaultWirePSO, Graphics::defaultSolidPSO);
         
         level.AddActor(ground);
-    }
+    }  
 
-    // cbuffer
+    // cbuffer init
+    mipmapConstsCPU.lod = 0.0f;
+    D3D11Utils::CreateConstBuffer(Engine::Get()->GetRenderer().GetDevice(),
+                                  mipmapConstsCPU, mipmapConstsGPU);
+    Engine::Get()->GetRenderer().GetContext()->PSSetConstantBuffers(
+        3, 1, mipmapConstsGPU.GetAddressOf());
 
     return true;
 }
@@ -84,6 +89,7 @@ void Sample_Mipmap::UpdateGUI()
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode("Sample Mipmap"))
     {
+        ImGui::SliderFloat("LOD Level", &mipmapConstsCPU.lod, 0.0f, 8.0f);
         ImGui::TreePop();
     }
 
@@ -91,7 +97,9 @@ void Sample_Mipmap::UpdateGUI()
 
 void Sample_Mipmap::Update(float dt)
 {
-    // cbuffer
+    // cbuffer update
+    D3D11Utils::UpdateBuffer(Engine::Get()->GetRenderer().GetContext(),
+                             mipmapConstsCPU, mipmapConstsGPU);
 
     Engine::Update(dt);
 }
