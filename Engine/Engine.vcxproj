@@ -162,6 +162,7 @@
     <ClCompile Include="Sample_Basic.cpp" />
     <ClCompile Include="Sample_IBL.cpp" />
     <ClCompile Include="Sample_Mipmap.cpp" />
+    <ClCompile Include="Sample_PBR.cpp" />
     <ClCompile Include="Sample_Phong.cpp" />
     <ClCompile Include="Sample_TEMPLATE.cpp" />
   </ItemGroup>
@@ -186,6 +187,7 @@
     <ClInclude Include="Sample_Basic.h" />
     <ClInclude Include="Sample_IBL.h" />
     <ClInclude Include="Sample_Mipmap.h" />
+    <ClInclude Include="Sample_PBR.h" />
     <ClInclude Include="Sample_Phong.h" />
     <ClInclude Include="Sample_TEMPLATE.h" />
     <ClInclude Include="Texture2D.h" />

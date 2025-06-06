@@ -4,7 +4,7 @@ Sample_TEMPLATE::Sample_TEMPLATE() : Engine() {}
 
 bool Sample_TEMPLATE::InitLevel()
 {
-    Engine::camera.Reset(Vector3(0.0f, 0.0f, -2.5f), 0.0f, 0.0f);
+    Engine::camera.Reset(Vector3(0.0f, 0.0f, -1.0f), 0.0f, 0.0f);
     Engine::InitLevel();
 
     // Actor

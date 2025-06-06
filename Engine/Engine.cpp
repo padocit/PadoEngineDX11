@@ -130,6 +130,9 @@ void Engine::UpdateGUI()
     ImGui::Checkbox("FPV (F key)", &camera.useFirstPersonView);
     ImGui::Checkbox("Wireframe", &renderer.drawAsWire);
 
+    ImGui::SliderFloat("EnvLodBias", &renderer.globalConstsCPU.lodBias, 0.0f,
+                       10.0f);
+
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode("Skybox"))
     {

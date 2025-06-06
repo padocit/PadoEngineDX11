@@ -4,13 +4,14 @@
 #include "Sample_Phong.h"
 #include "Sample_IBL.h"
 #include "Sample_Mipmap.h"
+#include "Sample_PBR.h"
 #include "Common.h"
 
 using namespace std;
 
 int main()
 {
-    unique_ptr<Engine> sample = make_unique<Sample_Mipmap>();
+    unique_ptr<Engine> sample = make_unique<Sample_PBR>();
 
 	if (!Engine::Create(move(sample)))
 	{

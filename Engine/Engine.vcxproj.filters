@@ -84,6 +84,9 @@
     <ClCompile Include="Sample_Mipmap.cpp">
       <Filter>Samples</Filter>
     </ClCompile>
+    <ClCompile Include="Sample_PBR.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine.h">
@@ -160,6 +163,9 @@
     </ClInclude>
     <ClInclude Include="Sample_Mipmap.h">
       <Filter>Samples</Filter>
+    </ClInclude>
+    <ClInclude Include="Sample_PBR.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
