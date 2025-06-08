@@ -39,6 +39,7 @@ extern ComPtr<ID3D11DepthStencilState> drawMaskedDSS; // 스텐실 표시된 곳만
 extern ComPtr<ID3D11VertexShader> basicVS;
 extern ComPtr<ID3D11VertexShader> skinnedVS; // basicVS.hlsl에 SKINNED 매크로
 extern ComPtr<ID3D11VertexShader> skyboxVS;
+extern ComPtr<ID3D11VertexShader> terrainVS;
 extern ComPtr<ID3D11VertexShader> samplingVS;
 extern ComPtr<ID3D11VertexShader> normalVS;
 extern ComPtr<ID3D11VertexShader> depthOnlyVS;
@@ -50,6 +51,7 @@ extern ComPtr<ID3D11PixelShader> phongPS;
 extern ComPtr<ID3D11PixelShader> iblPS;
 extern ComPtr<ID3D11PixelShader> mipmapPS;
 extern ComPtr<ID3D11PixelShader> skyboxPS;
+extern ComPtr<ID3D11PixelShader> terrainPS;
 extern ComPtr<ID3D11PixelShader> combinePS;
 extern ComPtr<ID3D11PixelShader> bloomDownPS;
 extern ComPtr<ID3D11PixelShader> bloomUpPS;
@@ -61,6 +63,11 @@ extern ComPtr<ID3D11PixelShader> grassPS;
 extern ComPtr<ID3D11PixelShader> oceanPS;
 extern ComPtr<ID3D11PixelShader> volumetricFirePS;
 extern ComPtr<ID3D11PixelShader> gameExplosionPS;
+
+extern ComPtr<ID3D11HullShader> terrainHS;
+
+extern ComPtr<ID3D11DomainShader> terrainDS;
+
 extern ComPtr<ID3D11GeometryShader> normalGS;
 extern ComPtr<ID3D11GeometryShader> billboardGS;
 
@@ -87,6 +94,8 @@ extern D3D11PSO phongSolidPSO;
 extern D3D11PSO phongWirePSO;
 extern D3D11PSO iblSolidPSO;
 extern D3D11PSO mipmapSolidPSO;
+extern D3D11PSO terrainSolidPSO;
+extern D3D11PSO terrainWirePSO;
 extern D3D11PSO stencilMaskPSO;
 extern D3D11PSO reflectSolidPSO;
 extern D3D11PSO reflectSkinnedSolidPSO;

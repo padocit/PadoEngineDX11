@@ -1,5 +1,6 @@
 #include "Sample_PBR.h"
 #include "Actor.h"
+#include "TerrainActor.h"
 #include "GeometryGenerator.h"
 
 using namespace std;
@@ -31,17 +32,45 @@ bool Sample_PBR::InitLevel()
         level.SetSkybox(skybox);
     }
 
+    // Terrain (ground)
+    {
+        MeshData terrainData =
+            GeometryGenerator::MakeSquareTerrain(5.0);
+        string path = "../Assets/Textures/PBR/PavingStones131/";
+        terrainData.albedoTextureFilename =
+            path + "PavingStones131_4K-PNG_Color.png";
+        terrainData.normalTextureFilename =
+            path + "PavingStones131_4K-PNG_NormalDX.png";
+        terrainData.heightTextureFilename =
+            path + "PavingStones131_4K-PNG_Displacement.png";
+        terrainData.aoTextureFilename =
+            path + "PavingStones131_4K-PNG_AmbientOcclusion.png";
+
+        terrain = make_shared<TerrainActor>(
+            renderer.GetDevice(), renderer.GetContext(), vector{terrainData});
+        terrain->materialConsts.GetCpu().albedoFactor = Vector3(1.0f);
+        terrain->name = "terrain";
+
+        Vector3 position = Vector3(0.0f, -0.5f, 2.0f);
+        terrain->UpdateWorldRow(Matrix::CreateRotationX(3.141592f * 0.5f) *
+                               Matrix::CreateTranslation(position));
+
+        terrain->SetPSO(Graphics::terrainWirePSO, Graphics::terrainSolidPSO);
+
+        level.AddActor(terrain);
+    } 
+
     // PBR Sphere
     {
         MeshData sphereData = GeometryGenerator::MakeSphere(0.5f, 200, 200);
         Vector3 center = Vector3(0.0f, 0.0f, 1.0f);
-        string path = "../Assets/Textures/PBR/PavingStones131/";
-        sphereData.albedoTextureFilename = path + "PavingStones131_4K-PNG_Color.png";
-        sphereData.normalTextureFilename = path + "PavingStones131_4K-PNG_NormalDX.png";
+        string path = "../Assets/Textures/PBR/Bricks102/";
+        sphereData.albedoTextureFilename = path + "Bricks102_4K-PNG_Color.png";
+        sphereData.normalTextureFilename = path + "Bricks102_4K-PNG_NormalDX.png";
         sphereData.heightTextureFilename =
-            path + "PavingStones131_4K-PNG_Displacement.png";
+            path + "Bricks102_4K-PNG_Displacement.png";
         sphereData.aoTextureFilename =
-            path + "PavingStones131_4K-PNG_AmbientOcclusion.png";
+            path + "Bricks102_4K-PNG_AmbientOcclusion.png";
          
         sphere = make_shared<Actor>(renderer.GetDevice(), renderer.GetContext(),
                                     vector{sphereData});
@@ -66,6 +95,29 @@ void Sample_PBR::UpdateGUI()
     Engine::UpdateGUI();
 
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    if (ImGui::TreeNode("Terrain"))
+    {
+        ImGui::Checkbox("Draw normals", &terrain->drawNormals);
+
+        int flag = 0;
+        flag += ImGui::CheckboxFlags(
+            "AlbedoTexture", &terrain->materialConsts.GetCpu().useAlbedoMap, 1);
+        flag += ImGui::CheckboxFlags(
+            "Use NormalMapping", &terrain->materialConsts.GetCpu().useNormalMap,
+            1);
+        flag += ImGui::CheckboxFlags(
+            "Use AO", &terrain->materialConsts.GetCpu().useAOMap, 1);
+        flag += ImGui::CheckboxFlags(
+            "Use HeightMapping", &terrain->meshConsts.GetCpu().useHeightMap,
+            1);
+        flag += ImGui::SliderFloat("HeightScale",
+                                   &terrain->meshConsts.GetCpu().heightScale,
+            0.0f, 1.0f);
+
+        
+        ImGui::TreePop();
+    }
+
     if (ImGui::TreeNode("Sphere"))
     {
         ImGui::Checkbox("Draw normals", &sphere->drawNormals);

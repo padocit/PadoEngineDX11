@@ -11,6 +11,8 @@
 #define LIGHT_SPOT 0x04
 #define LIGHT_SHADOW 0x10
 
+#define NUM_CONTROL_POINTS 4
+
 // 샘플러들을 모든 쉐이더에서 공통으로 사용
 SamplerState linearWrapSampler : register(s0);
 SamplerState linearClampSampler : register(s1);

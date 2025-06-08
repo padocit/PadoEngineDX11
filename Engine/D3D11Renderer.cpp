@@ -190,6 +190,10 @@ void D3D11Renderer::Render(Level* level)
                            Graphics::sampleStates.data());
     context->PSSetSamplers(0, UINT(Graphics::sampleStates.size()),
                              Graphics::sampleStates.data());
+    context->HSSetSamplers(0, UINT(Graphics::sampleStates.size()),
+                             Graphics::sampleStates.data());
+    context->DSSetSamplers(0, UINT(Graphics::sampleStates.size()),
+                             Graphics::sampleStates.data());
     
     // 공통으로 사용할 텍스춰들: "Common.hlsli"에서 register(t10)부터 시작
     vector<ID3D11ShaderResourceView *> commonSRVs = {
@@ -252,8 +256,10 @@ void D3D11Renderer::SetGlobalConsts(ComPtr<ID3D11Buffer> &globalConstsGPU)
 {
     // 쉐이더와 일관성 유지 cbuffer GlobalConstants : register(b0)
     context->VSSetConstantBuffers(0, 1, globalConstsGPU.GetAddressOf());
-    context->PSSetConstantBuffers(0, 1, globalConstsGPU.GetAddressOf());
+    context->HSSetConstantBuffers(0, 1, globalConstsGPU.GetAddressOf());
+    context->DSSetConstantBuffers(0, 1, globalConstsGPU.GetAddressOf());
     context->GSSetConstantBuffers(0, 1, globalConstsGPU.GetAddressOf());
+    context->PSSetConstantBuffers(0, 1, globalConstsGPU.GetAddressOf());
 }
 
 

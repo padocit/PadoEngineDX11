@@ -38,6 +38,7 @@ ComPtr<ID3D11BlendState> alphaBS;
 ComPtr<ID3D11VertexShader> basicVS;
 ComPtr<ID3D11VertexShader> skinnedVS;
 ComPtr<ID3D11VertexShader> skyboxVS;
+ComPtr<ID3D11VertexShader> terrainVS;
 ComPtr<ID3D11VertexShader> samplingVS;
 ComPtr<ID3D11VertexShader> normalVS;
 ComPtr<ID3D11VertexShader> depthOnlyVS;
@@ -50,6 +51,7 @@ ComPtr<ID3D11PixelShader> phongPS;
 ComPtr<ID3D11PixelShader> iblPS;
 ComPtr<ID3D11PixelShader> mipmapPS;
 ComPtr<ID3D11PixelShader> skyboxPS;
+ComPtr<ID3D11PixelShader> terrainPS;
 ComPtr<ID3D11PixelShader> combinePS;
 ComPtr<ID3D11PixelShader> bloomDownPS;
 ComPtr<ID3D11PixelShader> bloomUpPS;
@@ -63,6 +65,10 @@ ComPtr<ID3D11PixelShader> oceanPS;
 ComPtr<ID3D11PixelShader> volumetricFirePS;
 ComPtr<ID3D11PixelShader> gameExplosionPS;
 
+ComPtr<ID3D11HullShader> terrainHS;
+
+ComPtr<ID3D11DomainShader> terrainDS;
+
 ComPtr<ID3D11GeometryShader> normalGS;
 ComPtr<ID3D11GeometryShader> billboardGS;
 
@@ -71,6 +77,7 @@ ComPtr<ID3D11InputLayout> basicIL;
 ComPtr<ID3D11InputLayout> skinnedIL;
 ComPtr<ID3D11InputLayout> samplingIL;
 ComPtr<ID3D11InputLayout> skyboxIL;
+ComPtr<ID3D11InputLayout> terrainIL;
 ComPtr<ID3D11InputLayout> postProcessingIL;
 ComPtr<ID3D11InputLayout> grassIL;     // PER_INSTANCE 사용
 ComPtr<ID3D11InputLayout> billboardIL; // PER_INSTANCE 사용
@@ -93,6 +100,8 @@ D3D11PSO mirrorBlendSolidPSO;
 D3D11PSO mirrorBlendWirePSO;
 D3D11PSO skyboxSolidPSO;
 D3D11PSO skyboxWirePSO;
+D3D11PSO terrainSolidPSO;
+D3D11PSO terrainWirePSO;
 D3D11PSO reflectSkyboxSolidPSO;
 D3D11PSO reflectSkyboxWirePSO;
 D3D11PSO normalsPSO;
@@ -415,7 +424,7 @@ void Graphics::InitShaders(ComPtr<ID3D11Device> &device)
          D3D11_INPUT_PER_VERTEX_DATA, 0},
     };
 
-    std::vector<D3D11_INPUT_ELEMENT_DESC> skyboxIE = {
+    std::vector<D3D11_INPUT_ELEMENT_DESC> skyboxIEs = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
          D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12,
@@ -425,6 +434,18 @@ void Graphics::InitShaders(ComPtr<ID3D11Device> &device)
         {"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32,
          D3D11_INPUT_PER_VERTEX_DATA, 0},
     };
+
+    std::vector<D3D11_INPUT_ELEMENT_DESC> terrainIEs = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
+         D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12,
+         D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24,
+         D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32,
+         D3D11_INPUT_PER_VERTEX_DATA, 0},
+    };
+
 
     std::vector<D3D11_INPUT_ELEMENT_DESC> grassIEs = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, // Slot 0, 0부터 시작
@@ -460,7 +481,11 @@ void Graphics::InitShaders(ComPtr<ID3D11Device> &device)
     //D3D11Utils::CreateVertexShaderAndInputLayout(
     //    device, L"SamplingVS.hlsl", samplingIED, samplingVS, samplingIL);
     D3D11Utils::CreateVertexShaderAndInputLayout(device, L"SkyboxVS.hlsl",
-                                                 skyboxIE, skyboxVS, skyboxIL);
+                                                 skyboxIEs, skyboxVS, skyboxIL);
+
+    D3D11Utils::CreateVertexShaderAndInputLayout(
+        device, L"TerrainVS.hlsl", terrainIEs, terrainVS, terrainIL);
+
     //D3D11Utils::CreateVertexShaderAndInputLayout(
     //    device, L"DepthOnlyVS.hlsl", basicIEs, depthOnlyVS, skyboxIL);
     //D3D11Utils::CreateVertexShaderAndInputLayout(
@@ -475,6 +500,7 @@ void Graphics::InitShaders(ComPtr<ID3D11Device> &device)
     D3D11Utils::CreatePixelShader(device, L"PhongPS.hlsl", phongPS);
     D3D11Utils::CreatePixelShader(device, L"NormalPS.hlsl", normalPS);
     D3D11Utils::CreatePixelShader(device, L"SkyboxPS.hlsl", skyboxPS);
+    D3D11Utils::CreatePixelShader(device, L"TerrainPS.hlsl", terrainPS);
     D3D11Utils::CreatePixelShader(device, L"IblPS.hlsl", iblPS);
     D3D11Utils::CreatePixelShader(device, L"MipmapPS.hlsl", mipmapPS);
     //D3D11Utils::CreatePixelShader(device, L"CombinePS.hlsl", combinePS);
@@ -489,6 +515,10 @@ void Graphics::InitShaders(ComPtr<ID3D11Device> &device)
     //                              gameExplosionPS);
     //D3D11Utils::CreatePixelShader(device, L"VolumetricFirePS.hlsl",
     //                              volumetricFirePS);
+
+    D3D11Utils::CreateHullShader(device, L"TerrainHS.hlsl", terrainHS);
+
+    D3D11Utils::CreateDomainShader(device, L"TerrainDS.hlsl", terrainDS);
 
     D3D11Utils::CreateGeometryShader(device, L"NormalGS.hlsl", normalGS);
     //D3D11Utils::CreateGeometryShader(device, L"BillboardGS.hlsl", billboardGS);
@@ -579,6 +609,21 @@ void Graphics::InitPipelineStates(ComPtr<ID3D11Device> &device)
     // skyboxWirePSO
     skyboxWirePSO = skyboxSolidPSO;
     skyboxWirePSO.rasterizerState = wireRS;
+
+    // terrainSolidPSO
+    terrainSolidPSO.vertexShader = terrainVS;
+    terrainSolidPSO.inputLayout = terrainIL;
+    terrainSolidPSO.hullShader = terrainHS;
+    terrainSolidPSO.domainShader = terrainDS;
+    terrainSolidPSO.pixelShader = terrainPS;
+    terrainSolidPSO.rasterizerState = solidRS;
+    terrainSolidPSO.primitiveTopology =
+        D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST; // TODO: 필요에 따라 변경
+
+    // terrainWirePSO
+    terrainWirePSO = terrainSolidPSO;
+    terrainWirePSO.rasterizerState = wireRS;
+
 
     //// reflectSkyboxSolidPSO
     //reflectSkyboxSolidPSO = skyboxSolidPSO;

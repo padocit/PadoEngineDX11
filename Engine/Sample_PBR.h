@@ -1,5 +1,10 @@
+/*
+* PBR
+* Ground - Tessellation
+*/
 #pragma once
 #include "Engine.h"
+#include "TerrainActor.h"
 
 class Sample_PBR : public Engine
 {
@@ -13,4 +18,5 @@ public:
 
 private:
     shared_ptr<Actor> sphere;
+    shared_ptr<TerrainActor> terrain;
 };
