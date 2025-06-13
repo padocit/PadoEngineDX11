@@ -153,6 +153,57 @@ MeshData GeometryGenerator::MakeSquareGrid(const int numSlices,
     return meshData;
 }
 
+MeshData GeometryGenerator::MakeSquareGridTerrain(const int numSlices,
+                                                  const int numStacks,
+                                                  const float scale,
+                                                  const Vector2 texScale)
+{
+    MeshData meshData;
+    meshData.vertices.reserve(numSlices * numStacks * 4);
+
+    const float dx = 2.0f / numSlices;
+    const float dy = 2.0f / numStacks;
+    const Vector3 normal = {0, 0, -1};
+    const Vector3 tangent = {1, 0, 0};
+
+    for (int j = 0; j < numStacks; ++j)
+    {
+        float y0 = 1.0f - j * dy; // top
+        float y1 = y0 - dy;       // bottom
+
+        for (int i = 0; i < numSlices; ++i)
+        {
+            float x0 = -1.0f + i * dx; // left
+            float x1 = x0 + dx;        // right
+
+            // UV 계산 (0,0)=top-left, (1,1)=bottom-right
+            Vector2 uvTL = Vector2((x0 + 1) * 0.5f, (1 - y0) * 0.5f) * texScale;
+            Vector2 uvTR = Vector2((x1 + 1) * 0.5f, (1 - y0) * 0.5f) * texScale;
+            Vector2 uvBL = Vector2((x0 + 1) * 0.5f, (1 - y1) * 0.5f) * texScale;
+            Vector2 uvBR = Vector2((x1 + 1) * 0.5f, (1 - y1) * 0.5f) * texScale;
+
+            // TL
+            meshData.vertices.push_back(
+                {Vector3(x0, y0, 0) * scale, normal, uvTL, tangent});
+            // TR
+            meshData.vertices.push_back(
+                {Vector3(x1, y0, 0) * scale, normal, uvTR, tangent});
+            // BL
+            meshData.vertices.push_back(
+                {Vector3(x0, y1, 0) * scale, normal, uvBL, tangent});
+            // BR
+            meshData.vertices.push_back(
+                {Vector3(x1, y1, 0) * scale, normal, uvBR, tangent});
+        }
+    }
+
+    meshData.indices.resize(4 * numSlices * numStacks); // TODO: Draw를 사용하기 때문에 임시조치
+
+    return meshData;
+}
+
+
+
 MeshData GeometryGenerator::MakeGrass()
 {
 

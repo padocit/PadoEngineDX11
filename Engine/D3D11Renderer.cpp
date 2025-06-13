@@ -1,6 +1,10 @@
 #include "D3D11Renderer.h"
 #include "D3D11Utils.h"
 #include "D3D11Common.h"
+#include "GeometryGenerator.h"
+#include "Actor.h"
+
+using namespace std;
 
 bool D3D11Renderer::Initialize(const Resolution &resolution, HWND hWnd)
 {
@@ -12,7 +16,7 @@ bool D3D11Renderer::Initialize(const Resolution &resolution, HWND hWnd)
                   << std::endl;
         return false;
     }
-     
+    
     Graphics::InitCommonStates(device);
 
     CreateBuffers(); // backbuffer 포함
@@ -22,6 +26,21 @@ bool D3D11Renderer::Initialize(const Resolution &resolution, HWND hWnd)
     // 공통으로 쓰이는 cbuffers
     D3D11Utils::CreateConstBuffer(device, globalConstsCPU,
                                   globalConstsGPU);
+
+    // 그림자맵 렌더링할 때 사용할 GlobalConsts들 별도 생성
+    //for (int i = 0; i < MAX_LIGHTS; i++)
+    //{
+    //    D3D11Utils::CreateConstBuffer(device, shadowGlobalConstsCPU[i],
+    //                                  shadowGlobalConstsGPU[i]);
+    //}
+
+    // 후처리 효과용 ConstBuffer
+    D3D11Utils::CreateConstBuffer(device, postEffectsConstsCPU,
+                                  postEffectsConstsGPU);
+
+    // PostEffect에 사용
+    screenSquare = make_shared<Actor>(
+        device, context, vector{GeometryGenerator::MakeSquare()});
 
     return true;
 }
@@ -37,6 +56,15 @@ void D3D11Renderer::Update(Level* level, Camera* camera, float dt)
 
     // 공용 cbuffer 업데이트
     UpdateGlobalConstants(dt, eyeWorld, viewRow, projRow);
+
+    // Gui cbuffer -> 사용자 입력이 인식되면 GPU 버퍼 업데이트
+    if (postProcessFlag)
+        postProcess.combineFilter.UpdateConstantBuffers(context);
+
+    if (postEffectsFlag)
+        D3D11Utils::UpdateBuffer(context, postEffectsConstsCPU,
+                                 postEffectsConstsGPU);
+
 
     level->Update(device, context);
 }
@@ -69,19 +97,10 @@ bool D3D11Renderer::InitDeviceAndSwapChain(HWND hWnd)
     sd.OutputWindow = hWnd;
     sd.Windowed = TRUE;
     sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-    // sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; //ImGui 폰트가
-    // 두꺼워짐
-    sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-    if (numQualityLevels > 0)
-    {
-        sd.SampleDesc.Count = 4; // how many multisamples
-        sd.SampleDesc.Quality = numQualityLevels - 1;
-    }
-    else
-    {
-        sd.SampleDesc.Count = 1; // how many multisamples
-        sd.SampleDesc.Quality = 0;
-    }
+    sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // 더 빠름 (Flip: MSAA 미지원) // TODO: ImGui 폰트가 두꺼워지는 문제 발견 
+    //sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+    sd.SampleDesc.Count = 1; // _FLIP_은 MSAA 미지원
+    sd.SampleDesc.Quality = 0; // MSAA 끔 (HDR Pipeline)
 
     ThrowIfFailed(D3D11CreateDeviceAndSwapChain(
         0, driverType, 0, createDeviceFlags, featureLevels, 1,
@@ -99,15 +118,81 @@ bool D3D11Renderer::InitDeviceAndSwapChain(HWND hWnd)
 
 void D3D11Renderer::CreateBuffers()
 {
+    // MSAA buffer(float), Resolve buffer, PostEffect buffer, Swapchain Backbuffer 초기화
+    // HDR Rendering Pipeline: Scene Render -> MSAA(FP, HDR) -> Resolved(FP, HDR) -> PostProcess -> SwapChain BackBuffer(UNORM, SDR)
+
     ComPtr<ID3D11Texture2D> backBuffer;
     ThrowIfFailed(
         swapChain->GetBuffer(0, IID_PPV_ARGS(backBuffer.GetAddressOf())));
     ThrowIfFailed(device->CreateRenderTargetView(backBuffer.Get(), NULL,
                                                  backBufferRTV.GetAddressOf()));
-    //ThrowIfFailed(device->CheckMultisampleQualityLevels(
-    //    DXGI_FORMAT_R16G16B16A16_FLOAT, 4, &numQualityLevels)); // HDR + post process
+
+    // MSAA RTV/SRV (Floating Point, HDR)
+    ThrowIfFailed(device->CheckMultisampleQualityLevels(
+        DXGI_FORMAT_R16G16B16A16_FLOAT, 4, &numQualityLevels)); // HDR + post process
+
+    D3D11_TEXTURE2D_DESC desc;
+    backBuffer->GetDesc(&desc);
+    desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    
+    // TODO: 간단한 모션 블러 구현
+    // 이전 프레임 저장용
+    ThrowIfFailed(
+        device->CreateTexture2D(&desc, NULL, prevBuffer.GetAddressOf()));
+    ThrowIfFailed(device->CreateRenderTargetView(prevBuffer.Get(), NULL,
+                                                   prevRTV.GetAddressOf()));
+    ThrowIfFailed(device->CreateShaderResourceView(prevBuffer.Get(), NULL,
+                                                     prevSRV.GetAddressOf()));
+
+    desc.MipLevels = desc.ArraySize = 1;
+
+    desc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+    desc.Usage = D3D11_USAGE_DEFAULT; // 스테이징 텍스춰로부터 복사 가능
+    desc.MiscFlags = 0;
+    desc.CPUAccessFlags = 0;
+    if (useMSAA && numQualityLevels)
+    {
+        desc.SampleDesc.Count = 4;
+        desc.SampleDesc.Quality = numQualityLevels - 1;
+    }
+    else
+    {
+        desc.SampleDesc.Count = 1;
+        desc.SampleDesc.Quality = 0;
+    }
+
+    ThrowIfFailed(
+        device->CreateTexture2D(&desc, NULL, floatBuffer.GetAddressOf()));
+
+    ThrowIfFailed(device->CreateRenderTargetView(floatBuffer.Get(), NULL,
+                                                   floatRTV.GetAddressOf()));
+
+    // Resolved Buffer RTV/SRV (MSAA -> Resolve) (FP, HDR)
+    desc.SampleDesc.Count = 1;
+    desc.SampleDesc.Quality = 0;
+    desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE |
+                     D3D11_BIND_UNORDERED_ACCESS;
+    ThrowIfFailed(device->CreateTexture2D(&desc, NULL,
+                                            resolvedBuffer.GetAddressOf()));
+    ThrowIfFailed(device->CreateTexture2D(
+        &desc, NULL, postEffectsBuffer.GetAddressOf()));
+    ThrowIfFailed(device->CreateShaderResourceView(
+        resolvedBuffer.Get(), NULL, resolvedSRV.GetAddressOf()));
+
+    ThrowIfFailed(device->CreateShaderResourceView(
+        postEffectsBuffer.Get(), NULL, postEffectsSRV.GetAddressOf()));
+    ThrowIfFailed(device->CreateRenderTargetView(
+        resolvedBuffer.Get(), NULL, resolvedRTV.GetAddressOf()));
+    ThrowIfFailed(device->CreateRenderTargetView(
+        postEffectsBuffer.Get(), NULL, postEffectsRTV.GetAddressOf()));
 
     CreateDepthBuffers();
+
+    // SRV = postEffects, prev
+    // RTV = backBuffer
+    postProcess.Initialize(device, context, {postEffectsSRV, prevSRV},
+                            {backBufferRTV}, screenWidth, screenHeight,
+                            4);
 }
 
 void D3D11Renderer::CreateDepthBuffers()
@@ -139,6 +224,54 @@ void D3D11Renderer::CreateDepthBuffers()
         device->CreateTexture2D(&desc, 0, depthStencilBuffer.GetAddressOf()));
     ThrowIfFailed(device->CreateDepthStencilView(depthStencilBuffer.Get(), NULL,
                                                  defaultDSV.GetAddressOf()));
+
+    // Depth 전용
+    desc.Format = DXGI_FORMAT_R32_TYPELESS;
+    desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+    desc.SampleDesc.Count = 1;
+    desc.SampleDesc.Quality = 0;
+    ThrowIfFailed(device->CreateTexture2D(&desc, NULL,
+                                            depthOnlyBuffer.GetAddressOf()));
+
+    // 그림자 Buffers (Depth 전용)
+    desc.Width = shadowWidth;
+    desc.Height = shadowHeight;
+    for (int i = 0; i < MAX_LIGHTS; i++)
+    {
+        ThrowIfFailed(device->CreateTexture2D(
+            &desc, NULL, shadowBuffers[i].GetAddressOf()));
+    }
+
+    D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc;
+    ZeroMemory(&dsvDesc, sizeof(dsvDesc));
+    dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    ThrowIfFailed(device->CreateDepthStencilView(
+        depthOnlyBuffer.Get(), &dsvDesc, depthOnlyDSV.GetAddressOf()));
+
+    // 그림자 DSVs
+    for (int i = 0; i < MAX_LIGHTS; i++)
+    {
+        ThrowIfFailed(
+            device->CreateDepthStencilView(shadowBuffers[i].Get(), &dsvDesc,
+                                             shadowDSVs[i].GetAddressOf()));
+    }
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+    ZeroMemory(&srvDesc, sizeof(srvDesc));
+    srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = 1;
+    ThrowIfFailed(device->CreateShaderResourceView(
+        depthOnlyBuffer.Get(), &srvDesc, depthOnlySRV.GetAddressOf()));
+
+    // 그림자 SRVs
+    for (int i = 0; i < MAX_LIGHTS; i++)
+    {
+        ThrowIfFailed(device->CreateShaderResourceView(
+            shadowBuffers[i].Get(), &srvDesc,
+            shadowSRVs[i].GetAddressOf()));
+    }
 }
 
 void D3D11Renderer::SetResolution(const Resolution& resolution)
@@ -155,6 +288,20 @@ void D3D11Renderer::SetMainViewPort()
     screenViewport.TopLeftX = 0;
     screenViewport.TopLeftY = 0;
     screenViewport.Width = float(screenWidth - guiWidth);
+    screenViewport.Height = float(screenHeight);
+    screenViewport.MinDepth = 0.0f;
+    screenViewport.MaxDepth = 1.0f;
+
+    context->RSSetViewports(1, &screenViewport);
+}
+
+void D3D11Renderer::SetMainViewPortNoGUIWidth()
+{
+    // Set the viewport
+    ZeroMemory(&screenViewport, sizeof(D3D11_VIEWPORT));
+    screenViewport.TopLeftX = 0;
+    screenViewport.TopLeftY = 0;
+    screenViewport.Width = float(screenWidth);
     screenViewport.Height = float(screenHeight);
     screenViewport.MinDepth = 0.0f;
     screenViewport.MaxDepth = 1.0f;
@@ -181,6 +328,28 @@ void D3D11Renderer::CaptureScreen()
     D3D11Utils::WriteToPngFile(device, context, backBuffer, "captured.png");
 }
 
+void D3D11Renderer::ResetPostProcess()
+{
+    postProcess.Initialize(device, context, {postEffectsSRV, prevSRV},
+                           {backBufferRTV}, screenWidth, screenHeight, 4);
+}
+
+void D3D11Renderer::RenderDepthOnly(Level *level)
+{
+    context->OMSetRenderTargets(0, NULL, // DepthOnly라서 RTV 불필요
+                                depthOnlyDSV.Get());
+    context->ClearDepthStencilView(depthOnlyDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f,
+                                   0);
+    SetGlobalConsts(globalConstsGPU);
+    level->RenderDepthOnly(context);
+
+    SetPipelineState(Graphics::depthOnlyPSO);
+    if (level->skybox)
+        level->skybox->Render(context);
+    // if (m_mirror)
+    //     m_mirror->Render(m_context);
+}
+
 void D3D11Renderer::Render(Level* level)
 {
     SetMainViewPort();
@@ -202,12 +371,52 @@ void D3D11Renderer::Render(Level* level)
     context->PSSetShaderResources(10, UINT(commonSRVs.size()),
                                     commonSRVs.data());
 
-    Prepare(); 
-     
-    SetGlobalConsts(globalConstsGPU);
+    RenderDepthOnly(level);
+
+    Prepare(); // floatRTV
     level->Render(context, drawAsWire);
 
+    // Example의 Render()에서 RT 설정을 해주지 않았을 경우에도
+    // 백 버퍼에 GUI를 그리기위해 RT 설정
+    // 예) Render()에서 ComputeShader만 사용
+    SetMainViewPort();
     context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), NULL);
+}
+
+void D3D11Renderer::PostRender()
+{
+    // Resolve MSAA texture
+    context->ResolveSubresource(resolvedBuffer.Get(), 0,
+                                  floatBuffer.Get(), 0,
+                                  DXGI_FORMAT_R16G16B16A16_FLOAT);
+
+    // PostEffects (m_globalConstsGPU 사용)
+    D3D11Renderer::SetMainViewPortNoGUIWidth();
+    D3D11Renderer::SetPipelineState(Graphics::postEffectsPSO);
+    D3D11Renderer::SetGlobalConsts(globalConstsGPU);
+    vector<ID3D11ShaderResourceView *> postEffectsSRVs = {
+        resolvedSRV.Get(), depthOnlySRV.Get()};
+    context->PSSetShaderResources(20, // 주의: Startslot 20
+                                    UINT(postEffectsSRVs.size()),
+                                    postEffectsSRVs.data());
+    context->OMSetRenderTargets(1, postEffectsRTV.GetAddressOf(), NULL);
+    context->PSSetConstantBuffers(5, // register(b5)
+                                    1, postEffectsConstsGPU.GetAddressOf());
+    screenSquare->Render(context);
+
+    ID3D11ShaderResourceView *nulls[2] = {0, 0};
+    context->PSSetShaderResources(20, 2, nulls);
+
+    // 후처리 (블룸 같은 순수 이미지 처리)
+    D3D11Renderer::SetPipelineState(Graphics::postProcessingPSO);
+    postProcess.Render(context);
+
+    ComPtr<ID3D11Texture2D> backBuffer;
+    ThrowIfFailed(
+        swapChain->GetBuffer(0, IID_PPV_ARGS(backBuffer.GetAddressOf())));
+    context->CopyResource(
+        prevBuffer.Get(),
+        backBuffer.Get()); // 모션 블러 효과를 위해 렌더링 결과 보관
 }
 
 void D3D11Renderer::SwapBuffer()
@@ -283,11 +492,12 @@ void D3D11Renderer::SetPipelineState(const D3D11PSO &pso)
 void D3D11Renderer::Prepare()
 { 
     context->ClearRenderTargetView(backBufferRTV.Get(), clearColor);
+    context->ClearRenderTargetView(floatRTV.Get(), clearColor);
     // https://learn.microsoft.com/ko-kr/windows/win32/api/d3dcommon/ne-d3dcommon-d3d_primitive_topology
     context->ClearDepthStencilView(
         defaultDSV.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), defaultDSV.Get());
+    context->OMSetRenderTargets(1, floatRTV.GetAddressOf(), defaultDSV.Get());
 }
 
 float D3D11Renderer::GetAspectRatio() const

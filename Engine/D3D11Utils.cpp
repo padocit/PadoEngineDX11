@@ -249,7 +249,7 @@ void ReadEXRImage(const std::string filename, std::vector<uint8_t> &image,
     image.resize(scratchImage.GetPixelsSize());
     memcpy(image.data(), scratchImage.GetPixels(), image.size());
 
-    // 데이터 범위 확인해보기
+    // 데이터 범위 확인해보기 (디버깅)
     vector<float> f32(image.size() / 2);
     uint16_t *f16 = (uint16_t *)image.data();
     for (int i = 0; i < image.size() / 2; i++)
@@ -262,6 +262,7 @@ void ReadEXRImage(const std::string filename, std::vector<uint8_t> &image,
 
     cout << minValue << " " << maxValue << endl;
 
+    // f32 -> f16
     // f16 = (uint16_t *)image.data();
     // for (int i = 0; i < image.size() / 2; i++) {
     //     f16[i] = fp16_ieee_from_fp32_value(f32[i] * 2.0f);
@@ -538,8 +539,8 @@ void D3D11Utils::CreateTexture(ComPtr<ID3D11Device> &device,
 
     int width = 0, height = 0;
     std::vector<uint8_t> image;
-    DXGI_FORMAT pixelFormat = usSRGB ? DXGI_FORMAT_R8G8B8A8_UNORM/*_SRGB*/
-                                     : DXGI_FORMAT_R8G8B8A8_UNORM; // TODO:
+    DXGI_FORMAT pixelFormat = usSRGB ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB
+                                     : DXGI_FORMAT_R8G8B8A8_UNORM;
 
     string ext(filename.end() - 3, filename.end());
     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);

@@ -89,7 +89,7 @@ void Actor::Initialize(ComPtr<ID3D11Device> &device,
                        const vector<MeshData> &meshes)
 {
 
-    // 일반적으로는 Mesh들이 m_mesh/materialConsts를 각자 소유 가능
+    // 일반적으로는 Mesh들이 mesh/materialConsts를 각자 소유 가능
     // 여기서는 한 Model 안의 여러 Mesh들이 Consts를 모두 공유
 
     meshConsts.GetCpu().world = Matrix();

@@ -34,6 +34,9 @@ public:
     static MeshData MakeSquareGrid(const int numSlices, const int numStacks,
                                    const float scale = 1.0f,
                                    const Vector2 texScale = Vector2(1.0f));
+    static MeshData MakeSquareGridTerrain(const int numSlices, const int numStacks,
+                                   const float scale = 1.0f,
+                                   const Vector2 texScale = Vector2(1.0f));
     static MeshData MakeGrass();
     static MeshData MakeBox(const float scale = 1.0f);
     static MeshData MakeWireBox(const Vector3 center, const Vector3 extents);

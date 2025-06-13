@@ -41,6 +41,8 @@ void TerrainActor::Render(ComPtr<ID3D11DeviceContext> &context)
             context->PSSetConstantBuffers(1, 2, constBuffers);
 
 
+            context->HSSetConstantBuffers(1, 2, constBuffers);
+
             context->DSSetConstantBuffers(1, 2, constBuffers);
             context->DSSetShaderResources(0, 1, mesh->heightSRV.GetAddressOf());
 

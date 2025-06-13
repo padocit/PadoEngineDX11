@@ -478,16 +478,17 @@ void Graphics::InitShaders(ComPtr<ID3D11Device> &device)
     //    vector<D3D_SHADER_MACRO>{{"SKINNED", "1"}, {NULL, NULL}});
     D3D11Utils::CreateVertexShaderAndInputLayout(device, L"NormalVS.hlsl",
                                                  basicIEs, normalVS, basicIL);
-    //D3D11Utils::CreateVertexShaderAndInputLayout(
-    //    device, L"SamplingVS.hlsl", samplingIED, samplingVS, samplingIL);
+    D3D11Utils::CreateVertexShaderAndInputLayout(
+        device, L"SamplingVS.hlsl", samplingIED, samplingVS, samplingIL);
+
     D3D11Utils::CreateVertexShaderAndInputLayout(device, L"SkyboxVS.hlsl",
                                                  skyboxIEs, skyboxVS, skyboxIL);
 
     D3D11Utils::CreateVertexShaderAndInputLayout(
         device, L"TerrainVS.hlsl", terrainIEs, terrainVS, terrainIL);
 
-    //D3D11Utils::CreateVertexShaderAndInputLayout(
-    //    device, L"DepthOnlyVS.hlsl", basicIEs, depthOnlyVS, skyboxIL);
+    D3D11Utils::CreateVertexShaderAndInputLayout(
+        device, L"DepthOnlyVS.hlsl", basicIEs, depthOnlyVS, skyboxIL);
     //D3D11Utils::CreateVertexShaderAndInputLayout(
     //    device, L"DepthOnlyVS.hlsl", skinnedIEs, depthOnlySkinnedVS, skinnedIL,
     //    vector<D3D_SHADER_MACRO>{{"SKINNED", "1"}, {NULL, NULL}});
@@ -503,11 +504,11 @@ void Graphics::InitShaders(ComPtr<ID3D11Device> &device)
     D3D11Utils::CreatePixelShader(device, L"TerrainPS.hlsl", terrainPS);
     D3D11Utils::CreatePixelShader(device, L"IblPS.hlsl", iblPS);
     D3D11Utils::CreatePixelShader(device, L"MipmapPS.hlsl", mipmapPS);
-    //D3D11Utils::CreatePixelShader(device, L"CombinePS.hlsl", combinePS);
-    //D3D11Utils::CreatePixelShader(device, L"BloomDownPS.hlsl", bloomDownPS);
-    //D3D11Utils::CreatePixelShader(device, L"BloomUpPS.hlsl", bloomUpPS);
-    //D3D11Utils::CreatePixelShader(device, L"DepthOnlyPS.hlsl", depthOnlyPS);
-    //D3D11Utils::CreatePixelShader(device, L"PostEffectsPS.hlsl", postEffectsPS);
+    D3D11Utils::CreatePixelShader(device, L"CombinePS.hlsl", combinePS);
+    D3D11Utils::CreatePixelShader(device, L"BloomDownPS.hlsl", bloomDownPS);
+    D3D11Utils::CreatePixelShader(device, L"BloomUpPS.hlsl", bloomUpPS);
+    D3D11Utils::CreatePixelShader(device, L"DepthOnlyPS.hlsl", depthOnlyPS);
+    D3D11Utils::CreatePixelShader(device, L"PostEffectsPS.hlsl", postEffectsPS);
     //D3D11Utils::CreatePixelShader(device, L"ColorPS.hlsl", colorPS);
     //D3D11Utils::CreatePixelShader(device, L"Ex1802_GrassPS.hlsl", grassPS);
     //D3D11Utils::CreatePixelShader(device, L"Ex1803_OceanPS.hlsl", oceanPS);
@@ -644,25 +645,25 @@ void Graphics::InitPipelineStates(ComPtr<ID3D11Device> &device)
     normalsPSO.primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
 
     //// depthOnlyPSO
-    //depthOnlyPSO = defaultSolidPSO;
-    //depthOnlyPSO.vertexShader = depthOnlyVS;
-    //depthOnlyPSO.pixelShader = depthOnlyPS;
+    depthOnlyPSO = defaultSolidPSO;
+    depthOnlyPSO.vertexShader = depthOnlyVS;
+    depthOnlyPSO.pixelShader = depthOnlyPS;
 
     //depthOnlySkinnedPSO = depthOnlyPSO;
     //depthOnlySkinnedPSO.vertexShader = depthOnlySkinnedVS;
     //depthOnlySkinnedPSO.inputLayout = skinnedIL;
 
-    //// postEffectsPSO
-    //postEffectsPSO.vertexShader = samplingVS;
-    //postEffectsPSO.pixelShader = postEffectsPS;
-    //postEffectsPSO.inputLayout = samplingIL;
-    //postEffectsPSO.rasterizerState = postProcessingRS;
+    // postEffectsPSO
+    postEffectsPSO.vertexShader = samplingVS;
+    postEffectsPSO.pixelShader = postEffectsPS;
+    postEffectsPSO.inputLayout = samplingIL;
+    postEffectsPSO.rasterizerState = postProcessingRS;
 
-    //// postProcessingPSO
-    //postProcessingPSO.vertexShader = samplingVS;
-    //postProcessingPSO.pixelShader = depthOnlyPS; // dummy
-    //postProcessingPSO.inputLayout = samplingIL;
-    //postProcessingPSO.rasterizerState = postProcessingRS;
+    // postProcessingPSO
+    postProcessingPSO.vertexShader = samplingVS;
+    postProcessingPSO.pixelShader = depthOnlyPS; // dummy
+    postProcessingPSO.inputLayout = samplingIL;
+    postProcessingPSO.rasterizerState = postProcessingRS;
 
     //// boundingBoxPSO
     //boundingBoxPSO = defaultWirePSO;

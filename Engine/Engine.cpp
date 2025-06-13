@@ -134,6 +134,44 @@ void Engine::UpdateGUI()
                        10.0f);
 
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    if (ImGui::TreeNode("Post Processing"))
+    {
+
+        int &flag = renderer.postProcessFlag = 0;
+        flag += ImGui::SliderFloat(
+            "Bloom Strength",
+            &renderer.postProcess.combineFilter.constData.strength, 0.0f, 1.0f);
+        flag += ImGui::SliderFloat(
+            "Exposure",
+            &renderer.postProcess.combineFilter.constData.option1,
+            0.0f, 10.0f);
+        flag += ImGui::SliderFloat(
+            "Gamma", &renderer.postProcess.combineFilter.constData.option2,
+            0.1f,
+            5.0f);
+
+        ImGui::TreePop();
+    }
+
+
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    if (ImGui::TreeNode("Post Effects"))
+    {
+        int& flag = renderer.postEffectsFlag = 0;
+        flag += ImGui::RadioButton("Render", &renderer.postEffectsConstsCPU.mode, 1);
+        ImGui::SameLine();
+        flag +=
+            ImGui::RadioButton("Depth", &renderer.postEffectsConstsCPU.mode, 2);
+        flag += ImGui::SliderFloat(
+            "DepthScale", &renderer.postEffectsConstsCPU.depthScale, 0.0, 1.0);
+        flag += ImGui::SliderFloat(
+            "Fog", &renderer.postEffectsConstsCPU.fogStrength,
+                                   0.0, 10.0);
+
+        ImGui::TreePop();
+    }
+
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode("Skybox"))
     {
         ImGui::SliderFloat("Strength", &renderer.globalConstsCPU.strengthIBL, 0.0f,
@@ -155,6 +193,8 @@ void Engine::UpdateGUI()
 void Engine::Render()
 {
     renderer.Render(&level);
+    renderer.PostRender();
+
     guiManager.Render();
 
     renderer.SwapBuffer(); // Present()
@@ -216,9 +256,8 @@ LRESULT Engine::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 renderer.SetScreenSize((UINT)LOWORD(lParam),
                                        (UINT)HIWORD(lParam));
                 camera.SetAspectRatio(renderer.GetAspectRatio());
-                // m_postProcess.Initialize(
-                //     m_device, m_context, {m_postEffectsSRV, m_prevSRV},
-                //     {m_backBufferRTV}, m_screenWidth, m_screenHeight, 4);
+
+                renderer.ResetPostProcess();
             }
         }
         break;

@@ -17,9 +17,9 @@ bool Sample_PBR::InitLevel()
     // Cubemap
     {
         renderer.InitCubemaps(
-            L"../Assets/Textures/Cubemaps/", L"Atrium_specularIBL.dds",
-            L"Atrium_specularIBL.dds", L"Atrium_diffuseIBL.dds",
-            L"Atrium_diffuseIBL.dds");
+            L"../Assets/Textures/Cubemaps/HDRI/", L"IndoorEnvHDR.dds",
+            L"IndoorSpecularHDR.dds", L"IndoorDiffuseHDR.dds",
+            L"IndoorBrdf.dds");
 
         // 환경 박스 초기화
         MeshData skyboxMesh = GeometryGenerator::MakeBox(40.0f);
@@ -34,8 +34,10 @@ bool Sample_PBR::InitLevel()
 
     // Terrain (ground)
     {
+        //MeshData terrainData =
+        //    GeometryGenerator::MakeSquareGridTerrain(4, 4, 5.0); // Square vs SquareGrid
         MeshData terrainData =
-            GeometryGenerator::MakeSquareTerrain(5.0);
+            GeometryGenerator::MakeSquareTerrain(5.0); // Square vs SquareGrid
         string path = "../Assets/Textures/PBR/PavingStones131/";
         terrainData.albedoTextureFilename =
             path + "PavingStones131_4K-PNG_Color.png";
@@ -58,7 +60,7 @@ bool Sample_PBR::InitLevel()
         terrain->SetPSO(Graphics::terrainWirePSO, Graphics::terrainSolidPSO);
 
         level.AddActor(terrain);
-    } 
+    }    
 
     // PBR Sphere
     {
@@ -118,6 +120,7 @@ void Sample_PBR::UpdateGUI()
         ImGui::TreePop();
     }
 
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode("Sphere"))
     {
         ImGui::Checkbox("Draw normals", &sphere->drawNormals);
