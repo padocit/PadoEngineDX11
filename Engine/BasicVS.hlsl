@@ -13,7 +13,7 @@ PixelShaderInput main(VertexShaderInput input)
 
     if (useHeightMap)
     {
-        float height = g_heightTexture.SampleLevel(linearClampSampler, input.texcoord, 0).r;
+        float height = g_heightTexture.SampleLevel(linearWrapSampler, input.texcoord, 0).r; // select: wrap or clamp
         height = height * 2.0 - 1.0;
         output.posWorld += output.normalWorld * height * heightScale;
     }

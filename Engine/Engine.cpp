@@ -127,11 +127,34 @@ void Engine::Update(float dt)
 void Engine::UpdateGUI()
 {
     // 공통으로 쓰는 GUI
-    ImGui::Checkbox("FPV (F key)", &camera.useFirstPersonView);
-    ImGui::Checkbox("Wireframe", &renderer.drawAsWire);
+    if (ImGui::TreeNode("General"))
+    {
+        ImGui::Checkbox("FPV (F key)", &camera.useFirstPersonView);
+        ImGui::Checkbox("Wireframe", &renderer.drawAsWire);
+        if (ImGui::Checkbox("MSAA ON", &renderer.useMSAA))
+        {
+            renderer.CreateBuffers();
+        }
+        ImGui::SliderFloat("LodBias", &renderer.globalConstsCPU.lodBias, 0.0f,
+                           10.0f);
+        ImGui::TreePop();
+    }
 
-    ImGui::SliderFloat("EnvLodBias", &renderer.globalConstsCPU.lodBias, 0.0f,
-                       10.0f);
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    if (ImGui::TreeNode("Skybox"))
+    {
+        ImGui::SliderFloat("Strength", &renderer.globalConstsCPU.strengthIBL, 0.0f,
+                           0.5f);
+        ImGui::RadioButton("Env", &renderer.globalConstsCPU.textureToDraw, 0);
+        ImGui::SameLine();
+        ImGui::RadioButton("Specular", &renderer.globalConstsCPU.textureToDraw,
+                           1);
+        ImGui::SameLine();
+        ImGui::RadioButton("Irradiance", &renderer.globalConstsCPU.textureToDraw, 2);
+        ImGui::SliderFloat("EnvLodBias", &renderer.globalConstsCPU.envLodBias, 0.0f,
+                           10.0f);
+        ImGui::TreePop();
+    }
 
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode("Post Processing"))
@@ -154,40 +177,23 @@ void Engine::UpdateGUI()
     }
 
 
-    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::TreeNode("Post Effects"))
-    {
-        int& flag = renderer.postEffectsFlag = 0;
-        flag += ImGui::RadioButton("Render", &renderer.postEffectsConstsCPU.mode, 1);
-        ImGui::SameLine();
-        flag +=
-            ImGui::RadioButton("Depth", &renderer.postEffectsConstsCPU.mode, 2);
-        flag += ImGui::SliderFloat(
-            "DepthScale", &renderer.postEffectsConstsCPU.depthScale, 0.0, 1.0);
-        flag += ImGui::SliderFloat(
-            "Fog", &renderer.postEffectsConstsCPU.fogStrength,
-                                   0.0, 10.0);
+    //ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    //if (ImGui::TreeNode("Post Effects"))
+    //{
+    //    int& flag = renderer.postEffectsFlag = 0;
+    //    flag += ImGui::RadioButton("Render", &renderer.postEffectsConstsCPU.mode, 1);
+    //    ImGui::SameLine();
+    //    flag +=
+    //        ImGui::RadioButton("Depth", &renderer.postEffectsConstsCPU.mode, 2);
+    //    flag += ImGui::SliderFloat(
+    //        "DepthScale", &renderer.postEffectsConstsCPU.depthScale, 0.0, 1.0);
+    //    flag += ImGui::SliderFloat(
+    //        "Fog", &renderer.postEffectsConstsCPU.fogStrength,
+    //                               0.0, 10.0);
 
-        ImGui::TreePop();
-    }
+    //    ImGui::TreePop();
+    //}
 
-    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::TreeNode("Skybox"))
-    {
-        ImGui::SliderFloat("Strength", &renderer.globalConstsCPU.strengthIBL, 0.0f,
-                           2.0f);
-        //ImGui::RadioButton("Env", &renderer.globalConstsCPU.textureToDraw, 0);
-        //ImGui::SameLine();
-        //ImGui::RadioButton("Specular", &renderer.globalConstsCPU.textureToDraw,
-        //                   1);
-        //ImGui::SameLine();
-        //ImGui::RadioButton("Irradiance",
-        //                   &renderer.globalConstsCPU.textureToDraw, 2);
-        ImGui::SliderFloat("EnvLodBias", &renderer.globalConstsCPU.envLodBias,
-                           0.0f,
-                           10.0f);
-        ImGui::TreePop();
-    }
 }
 
 void Engine::Render()

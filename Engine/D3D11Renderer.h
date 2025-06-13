@@ -85,6 +85,7 @@ public:
     int postEffectsFlag = 0;
     PostEffectsConstants postEffectsConstsCPU;
     ComPtr<ID3D11Buffer> postEffectsConstsGPU;
+    bool useMSAA = true;
 
     // Render(FP, HDR) -> PostEffects -> PostProcess
     PostProcess postProcess;
@@ -95,7 +96,6 @@ private:
 	int screenWidth;
 	int screenHeight;
 	float aspectRatio;
-	bool useMSAA = true;
 	UINT numQualityLevels = 0;
     float clearColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
     

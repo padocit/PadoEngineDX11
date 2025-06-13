@@ -11,7 +11,7 @@ Sample_PBR::Sample_PBR() : Engine()
 
 bool Sample_PBR::InitLevel()
 {
-    Engine::camera.Reset(Vector3(0.0f, 0.0f, -1.0f), 0.0f, 0.0f);
+    Engine::camera.Reset(Vector3(0.0f, 0.5f, -1.0f), 0.0f, 0.0f);
     Engine::InitLevel();
 
     // Cubemap
@@ -47,11 +47,17 @@ bool Sample_PBR::InitLevel()
             path + "PavingStones131_4K-PNG_Displacement.png";
         terrainData.aoTextureFilename =
             path + "PavingStones131_4K-PNG_AmbientOcclusion.png";
+        terrainData.emissiveTextureFilename = "";
+        terrainData.metallicTextureFilename = "";
+        terrainData.roughnessTextureFilename =
+            path + "PavingStones131_4K-PNG_Roughness.png";
 
         terrain = make_shared<TerrainActor>(
             renderer.GetDevice(), renderer.GetContext(), vector{terrainData});
         terrain->materialConsts.GetCpu().albedoFactor = Vector3(1.0f);
         terrain->name = "terrain";
+
+        terrain->materialConsts.GetCpu().metallicFactor = 0.0f;
 
         Vector3 position = Vector3(0.0f, -0.5f, 2.0f);
         terrain->UpdateWorldRow(Matrix::CreateRotationX(3.141592f * 0.5f) *
@@ -62,17 +68,22 @@ bool Sample_PBR::InitLevel()
         level.AddActor(terrain);
     }    
 
-    // PBR Sphere
+    // PBR Sphere <- UE PBR
     {
-        MeshData sphereData = GeometryGenerator::MakeSphere(0.5f, 200, 200);
-        Vector3 center = Vector3(0.0f, 0.0f, 1.0f);
-        string path = "../Assets/Textures/PBR/Bricks102/";
-        sphereData.albedoTextureFilename = path + "Bricks102_4K-PNG_Color.png";
-        sphereData.normalTextureFilename = path + "Bricks102_4K-PNG_NormalDX.png";
+        MeshData sphereData = GeometryGenerator::MakeSphere(0.5f, 200, 200, {2.0f, 2.0f}); 
+        Vector3 center = Vector3(0.0f, 0.5f, 1.0f); 
+        string path = "../Assets/Textures/PBR/worn-painted-metal-ue/";
+        sphereData.albedoTextureFilename = path + "worn-painted-metal_albedo.png";
+        sphereData.normalTextureFilename = path + "worn-painted-metal_normal-dx.png";
         sphereData.heightTextureFilename =
-            path + "Bricks102_4K-PNG_Displacement.png";
+            path + "worn-painted-metal_height.png";
         sphereData.aoTextureFilename =
-            path + "Bricks102_4K-PNG_AmbientOcclusion.png";
+            path + "worn-painted-metal_ao.png";
+        sphereData.emissiveTextureFilename = "";
+        sphereData.metallicTextureFilename =
+            path + "worn-painted-metal_metallic.png";
+        sphereData.roughnessTextureFilename =
+            path + "worn-painted-metal_roughness.png";
          
         sphere = make_shared<Actor>(renderer.GetDevice(), renderer.GetContext(),
                                     vector{sphereData});
@@ -102,6 +113,14 @@ void Sample_PBR::UpdateGUI()
         ImGui::Checkbox("Draw normals", &terrain->drawNormals);
 
         int flag = 0;
+        flag += ImGui::SliderFloat(
+            "Metallic", &terrain->materialConsts.GetCpu().metallicFactor, 0.0f,
+            1.0f);
+        flag += ImGui::SliderFloat(
+            "Roughness", &terrain->materialConsts.GetCpu().roughnessFactor,
+            0.0f,
+            1.0f);
+
         flag += ImGui::CheckboxFlags(
             "AlbedoTexture", &terrain->materialConsts.GetCpu().useAlbedoMap, 1);
         flag += ImGui::CheckboxFlags(
@@ -115,8 +134,16 @@ void Sample_PBR::UpdateGUI()
         flag += ImGui::SliderFloat("HeightScale",
                                    &terrain->meshConsts.GetCpu().heightScale,
             0.0f, 1.0f);
+        flag += ImGui::CheckboxFlags(
+            "Use RoughnessMap",
+            &terrain->materialConsts.GetCpu().useRoughnessMap, 1);
 
-        
+        if (flag)
+        {
+            terrain->UpdateConstantBuffers(renderer.GetDevice(),
+                                          renderer.GetContext());
+        }
+
         ImGui::TreePop();
     }
 
@@ -126,9 +153,19 @@ void Sample_PBR::UpdateGUI()
         ImGui::Checkbox("Draw normals", &sphere->drawNormals);
 
         int flag = 0;
+        flag += ImGui::SliderFloat(
+            "Metallic", &sphere->materialConsts.GetCpu().metallicFactor, 0.0f,
+            1.0f);
+        flag += ImGui::SliderFloat(
+            "Roughness", &sphere->materialConsts.GetCpu().roughnessFactor,
+            0.0f,
+            1.0f);
         flag += ImGui::CheckboxFlags(
             "AlbedoTexture",
             &sphere->materialConsts.GetCpu().useAlbedoMap, 1);
+        flag += ImGui::CheckboxFlags(
+            "EmissiveTexture",
+            &sphere->materialConsts.GetCpu().useEmissiveMap, 1);
         flag += ImGui::CheckboxFlags(
             "Use NormalMapping",
             &sphere->materialConsts.GetCpu().useNormalMap, 1);
@@ -140,6 +177,17 @@ void Sample_PBR::UpdateGUI()
         flag += ImGui::SliderFloat("HeightScale",
                                    &sphere->meshConsts.GetCpu().heightScale,
             0.0f, 0.1f);
+        flag += ImGui::CheckboxFlags(
+            "Use MetallicMap",
+            &sphere->materialConsts.GetCpu().useMetallicMap, 1);
+        flag += ImGui::CheckboxFlags(
+            "Use RoughnessMap",
+            &sphere->materialConsts.GetCpu().useRoughnessMap, 1);
+
+        if (flag)
+        {
+            sphere->UpdateConstantBuffers(renderer.GetDevice(), renderer.GetContext());
+        }
 
 
         ImGui::TreePop();

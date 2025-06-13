@@ -115,7 +115,7 @@ __declspec(align(256)) struct GlobalConstants
 
     int textureToDraw = 0;   // 0: Env, 1: Specular, 2: Irradiance, 그외: 검은색
     float envLodBias = 0.0f; // 환경맵 LodBias
-    float lodBias = 2.0f;    // 다른 물체들 LodBias
+    float lodBias = 1.0f;    // 다른 물체들 LodBias
     float globalTime = 0.0f;
 
     Light lights[MAX_LIGHTS];
