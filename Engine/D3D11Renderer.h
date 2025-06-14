@@ -22,7 +22,7 @@ public:
     void Shutdown() {}
 
 	// Update & Render
-    void Update(Level* level, Camera* camera, float dt);
+    void Update(Camera* camera, float dt);
     //virtual void UpdateLights(float dt);
     virtual void RenderDepthOnly(Level *level);
     //virtual void RenderShadowMaps();

@@ -91,6 +91,7 @@ bool Sample_PBR::InitLevel()
         sphere->materialConsts.GetCpu().albedoFactor = Vector3(1.0f); // white
         sphere->UpdateConstantBuffers(renderer.GetDevice(),
                                       renderer.GetContext());
+        sphere->isPickable = true;
         sphere->name = "sphere";
 
         sphere->SetPSO(Graphics::defaultWirePSO, Graphics::defaultSolidPSO);
@@ -159,7 +160,7 @@ void Sample_PBR::UpdateGUI()
 {
     Engine::UpdateGUI();
 
-    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    ImGui::SetNextItemOpen(false, ImGuiCond_Once);
     if (ImGui::TreeNode("Terrain"))
     {
         ImGui::Checkbox("Draw normals", &terrain->drawNormals);
@@ -170,8 +171,7 @@ void Sample_PBR::UpdateGUI()
             1.0f);
         flag += ImGui::SliderFloat(
             "Roughness", &terrain->materialConsts.GetCpu().roughnessFactor,
-            0.0f,
-            1.0f);
+            0.0f, 1.0f);
 
         flag += ImGui::CheckboxFlags(
             "AlbedoTexture", &terrain->materialConsts.GetCpu().useAlbedoMap, 1);
@@ -181,11 +181,10 @@ void Sample_PBR::UpdateGUI()
         flag += ImGui::CheckboxFlags(
             "Use AO", &terrain->materialConsts.GetCpu().useAOMap, 1);
         flag += ImGui::CheckboxFlags(
-            "Use HeightMapping", &terrain->meshConsts.GetCpu().useHeightMap,
-            1);
+            "Use HeightMapping", &terrain->meshConsts.GetCpu().useHeightMap, 1);
         flag += ImGui::SliderFloat("HeightScale",
                                    &terrain->meshConsts.GetCpu().heightScale,
-            0.0f, 1.0f);
+                                   0.0f, 1.0f);
         flag += ImGui::CheckboxFlags(
             "Use RoughnessMap",
             &terrain->materialConsts.GetCpu().useRoughnessMap, 1);
@@ -193,150 +192,65 @@ void Sample_PBR::UpdateGUI()
         if (flag)
         {
             terrain->UpdateConstantBuffers(renderer.GetDevice(),
-                                          renderer.GetContext());
+                                           renderer.GetContext());
         }
 
         ImGui::TreePop();
     }
 
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::TreeNode("Sphere"))
+    if (ImGui::TreeNode("Material"))
     {
-        ImGui::Checkbox("Draw normals", &sphere->drawNormals);
 
         int flag = 0;
-        flag += ImGui::SliderFloat(
-            "Metallic", &sphere->materialConsts.GetCpu().metallicFactor, 0.0f,
-            1.0f);
-        flag += ImGui::SliderFloat(
-            "Roughness", &sphere->materialConsts.GetCpu().roughnessFactor,
-            0.0f,
-            1.0f);
-        flag += ImGui::CheckboxFlags(
-            "AlbedoTexture",
-            &sphere->materialConsts.GetCpu().useAlbedoMap, 1);
-        flag += ImGui::CheckboxFlags(
-            "EmissiveTexture",
-            &sphere->materialConsts.GetCpu().useEmissiveMap, 1);
-        flag += ImGui::CheckboxFlags(
-            "Use NormalMapping",
-            &sphere->materialConsts.GetCpu().useNormalMap, 1);
-        flag += ImGui::CheckboxFlags(
-            "Use AO", &sphere->materialConsts.GetCpu().useAOMap, 1);
-        flag += ImGui::CheckboxFlags(
-            "Use HeightMapping", &sphere->meshConsts.GetCpu().useHeightMap,
-            1);
-        flag += ImGui::SliderFloat("HeightScale",
-                                   &sphere->meshConsts.GetCpu().heightScale,
-            0.0f, 0.1f);
-        flag += ImGui::CheckboxFlags(
-            "Use MetallicMap",
-            &sphere->materialConsts.GetCpu().useMetallicMap, 1);
-        flag += ImGui::CheckboxFlags(
-            "Use RoughnessMap",
-            &sphere->materialConsts.GetCpu().useRoughnessMap, 1);
 
-        if (flag)
+        if (pickedModel)
         {
-            sphere->UpdateConstantBuffers(renderer.GetDevice(), renderer.GetContext());
+            flag += ImGui::SliderFloat(
+                "Metallic",
+                &pickedModel->materialConsts.GetCpu().metallicFactor,
+                0.0f,
+                1.0f);
+            flag += ImGui::SliderFloat(
+                "Roughness",
+                &pickedModel->materialConsts.GetCpu().roughnessFactor,
+                0.0f,
+                1.0f);
+            flag += ImGui::CheckboxFlags(
+                "AlbedoTexture",
+                &pickedModel->materialConsts.GetCpu().useAlbedoMap,
+                1);
+            flag += ImGui::CheckboxFlags(
+                "EmissiveTexture",
+                &pickedModel->materialConsts.GetCpu().useEmissiveMap,
+                1);
+            flag += ImGui::CheckboxFlags(
+                "Use NormalMapping",
+                &pickedModel->materialConsts.GetCpu().useNormalMap,
+                1);
+            flag += ImGui::CheckboxFlags(
+                "Use AO", &pickedModel->materialConsts.GetCpu().useAOMap, 1);
+            flag += ImGui::CheckboxFlags(
+                "Use HeightMapping",
+                &pickedModel->meshConsts.GetCpu().useHeightMap,
+                1);
+            flag += ImGui::SliderFloat("HeightScale", &pickedModel->meshConsts.GetCpu().heightScale,
+                0.0f, 0.1f);
+            flag += ImGui::CheckboxFlags(
+                "Use MetallicMap",
+                &pickedModel->materialConsts.GetCpu().useMetallicMap,
+                1);
+            flag += ImGui::CheckboxFlags(
+                "Use RoughnessMap",
+                &pickedModel->materialConsts.GetCpu().useRoughnessMap, 1);
+
+            if (flag)
+            {
+                pickedModel->UpdateConstantBuffers(renderer.GetDevice(),
+                                                 renderer.GetContext());
+            }
+            ImGui::Checkbox("Draw normals", &pickedModel->drawNormals);
         }
-
-
-        ImGui::TreePop();
-    }
-
-    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::TreeNode("Character"))
-    {
-        ImGui::Checkbox("Draw normals", &character->drawNormals);
-
-        int flag = 0;
-        flag += ImGui::SliderFloat(
-            "Metallic", &character->materialConsts.GetCpu().metallicFactor,
-            0.0f,
-            1.0f);
-        flag += ImGui::SliderFloat(
-            "Roughness", &character->materialConsts.GetCpu().roughnessFactor,
-            0.0f,
-            1.0f);
-        flag += ImGui::CheckboxFlags(
-            "AlbedoTexture", &character->materialConsts.GetCpu().useAlbedoMap,
-            1);
-        flag += ImGui::CheckboxFlags(
-            "EmissiveTexture",
-            &character->materialConsts.GetCpu().useEmissiveMap, 1);
-        flag += ImGui::CheckboxFlags(
-            "Use NormalMapping",
-            &character->materialConsts.GetCpu().useNormalMap, 1);
-        flag += ImGui::CheckboxFlags(
-            "Use AO", &character->materialConsts.GetCpu().useAOMap, 1);
-        flag += ImGui::CheckboxFlags(
-            "Use HeightMapping", &character->meshConsts.GetCpu().useHeightMap,
-            1);
-        flag += ImGui::SliderFloat("HeightScale",
-                                   &character->meshConsts.GetCpu().heightScale,
-            0.0f, 0.1f);
-        flag += ImGui::CheckboxFlags(
-            "Use MetallicMap",
-            &character->materialConsts.GetCpu().useMetallicMap, 1);
-        flag += ImGui::CheckboxFlags(
-            "Use RoughnessMap",
-            &character->materialConsts.GetCpu().useRoughnessMap, 1);
-
-        if (flag)
-        {
-            character->UpdateConstantBuffers(renderer.GetDevice(),
-                                             renderer.GetContext());
-        }
-
-
-        ImGui::TreePop();
-    }
-
-    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::TreeNode("Helmet"))
-    {
-        ImGui::Checkbox("Draw normals", &helmet->drawNormals);
-
-        int flag = 0;
-        flag += ImGui::SliderFloat(
-            "Metallic", &helmet->materialConsts.GetCpu().metallicFactor,
-            0.0f,
-            1.0f);
-        flag += ImGui::SliderFloat(
-            "Roughness", &helmet->materialConsts.GetCpu().roughnessFactor,
-            0.0f,
-            1.0f);
-        flag += ImGui::CheckboxFlags(
-            "AlbedoTexture", &helmet->materialConsts.GetCpu().useAlbedoMap,
-            1);
-        flag += ImGui::CheckboxFlags(
-            "EmissiveTexture", &helmet->materialConsts.GetCpu().useEmissiveMap,
-            1);
-        flag += ImGui::CheckboxFlags(
-            "Use NormalMapping", &helmet->materialConsts.GetCpu().useNormalMap,
-            1);
-        flag += ImGui::CheckboxFlags(
-            "Use AO", &helmet->materialConsts.GetCpu().useAOMap, 1);
-        flag += ImGui::CheckboxFlags(
-            "Use HeightMapping", &helmet->meshConsts.GetCpu().useHeightMap,
-            1);
-        flag += ImGui::SliderFloat("HeightScale",
-                                   &helmet->meshConsts.GetCpu().heightScale,
-            0.0f, 0.1f);
-        flag += ImGui::CheckboxFlags(
-            "Use MetallicMap", &helmet->materialConsts.GetCpu().useMetallicMap,
-            1);
-        flag += ImGui::CheckboxFlags(
-            "Use RoughnessMap",
-            &helmet->materialConsts.GetCpu().useRoughnessMap, 1);
-
-        if (flag)
-        {
-            helmet->UpdateConstantBuffers(renderer.GetDevice(),
-                                             renderer.GetContext());
-        }
-
 
         ImGui::TreePop();
     }

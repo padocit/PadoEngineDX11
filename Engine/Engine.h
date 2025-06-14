@@ -20,9 +20,13 @@ public:
     virtual void UpdateGUI();
 	virtual void Render();
 
-    virtual void OnMouseMove(int mouseX, int mouseY);
-    virtual void OnMouseClick(int mouseX, int mouseY);
+    virtual void OnMouseMove(int MouseX, int MouseY);
+    virtual void OnMouseClick(int MouseX, int MouseY);
     virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+    shared_ptr<Actor> PickClosest(const DirectX::SimpleMath::Ray &pickingRay,
+                                  float &minDist);
+    void ProcessMouseControl();
 
 	// Init
 	bool InitMainWindow(const Resolution& resolution);
@@ -37,6 +41,10 @@ public:
 	// Singleton
 	static bool Create(std::unique_ptr<Engine> sample);
 	static Engine* Get();
+
+public:
+    shared_ptr<Actor> pickedModel; // GUI Á¶ÀÛ¿ë
+    shared_ptr<Actor> cursorSphere;
 
 protected:
     D3D11Renderer renderer;

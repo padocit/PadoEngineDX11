@@ -28,7 +28,7 @@ void Level::SetSkybox(std::shared_ptr<Actor> newSkybox)
 void Level::Update(ComPtr<ID3D11Device> &device,
                    ComPtr<ID3D11DeviceContext> &context)
 {
-    for (auto actor : actors)
+    for (auto &actor : actors)
     {
         actor->UpdateConstantBuffers(device, context);
     }

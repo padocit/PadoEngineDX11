@@ -21,6 +21,6 @@ public:
 public:
     shared_ptr<Actor> skybox;
 
-protected:
+public: // юс╫ц
     std::vector<std::shared_ptr<Actor>> actors;
 };

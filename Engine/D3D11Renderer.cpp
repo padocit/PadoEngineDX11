@@ -45,7 +45,7 @@ bool D3D11Renderer::Initialize(const Resolution &resolution, HWND hWnd)
     return true;
 }
 
-void D3D11Renderer::Update(Level* level, Camera* camera, float dt)
+void D3D11Renderer::Update(Camera* camera, float dt)
 {
     const Vector3 eyeWorld = camera->GetEyePos();
     //const Matrix reflectRow = Matrix::CreateReflection(mirrorPlane);
@@ -57,6 +57,13 @@ void D3D11Renderer::Update(Level* level, Camera* camera, float dt)
     // 공용 cbuffer 업데이트
     UpdateGlobalConstants(dt, eyeWorld, viewRow, projRow);
 
+    // 조명의 위치 반영
+    for (int i = 0; i < MAX_LIGHTS; i++)
+        lightSphere[i]->UpdateWorldRow(
+            Matrix::CreateScale(
+                max(0.01f, globalConstsCPU.lights[i].radius)) *
+            Matrix::CreateTranslation(globalConstsCPU.lights[i].position));
+
     // Gui cbuffer -> 사용자 입력이 인식되면 GPU 버퍼 업데이트
     if (postProcessFlag)
         postProcess.combineFilter.UpdateConstantBuffers(context);
@@ -64,9 +71,6 @@ void D3D11Renderer::Update(Level* level, Camera* camera, float dt)
     if (postEffectsFlag)
         D3D11Utils::UpdateBuffer(context, postEffectsConstsCPU,
                                  postEffectsConstsGPU);
-
-
-    level->Update(device, context);
 }
 
 bool D3D11Renderer::InitDeviceAndSwapChain(HWND hWnd)

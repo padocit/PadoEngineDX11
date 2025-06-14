@@ -9,7 +9,10 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd,
                                                              LPARAM lParam);
 
 using namespace std;
+using namespace DirectX;
+using namespace DirectX::SimpleMath;
 using DirectX::SimpleMath::Vector3;
+using DirectX::SimpleMath::Ray;
 
 // Singleton
 std::unique_ptr<Engine> Engine::instance = nullptr;
@@ -155,6 +158,21 @@ bool Engine::InitLevel()
         }
     }
 
+    // 커서 표시 (Main sphere와의 충돌이 감지되면 월드 공간에 작게 그려지는 구)
+    {
+        MeshData sphere = GeometryGenerator::MakeSphere(0.01f, 10, 10);
+        cursorSphere = make_shared<Actor>(
+            renderer.GetDevice(), renderer.GetContext(), vector{sphere});
+        cursorSphere->isVisible = false;  // 마우스가 눌렸을 때만 보임
+        cursorSphere->castShadow = false; // 그림자 X
+        cursorSphere->materialConsts.GetCpu().albedoFactor = Vector3(0.0f);
+        cursorSphere->materialConsts.GetCpu().emissionFactor =
+            Vector3(0.0f, 1.0f, 0.0f);
+
+        level.AddActor(cursorSphere);
+    }
+
+
     return false;
 }
 
@@ -164,7 +182,11 @@ void Engine::Update(float dt)
     camera.UpdateKeyboard(dt, keyPressed);
     // ProcessMouseControl();
 
-    renderer.Update(&level, &camera, dt);
+    renderer.Update(&camera, dt);
+
+    ProcessMouseControl();
+    
+    level.Update(renderer.GetDevice(), renderer.GetContext());
 }
 
 void Engine::UpdateGUI()
@@ -260,11 +282,11 @@ void Engine::Render()
     renderer.SwapBuffer(); // Present()
 }
 
-void Engine::OnMouseMove(int mouseX, int mouseY)
+void Engine::OnMouseMove(int MouseX, int MouseY)
 {
 
-    mouseX = mouseX;
-    mouseY = mouseY;
+    mouseX = MouseX + guiManager.guiWidth / 2;
+    mouseY = MouseY;
 
     // 마우스 커서의 위치를 NDC로 변환
     // 마우스 커서는 좌측 상단 (0, 0), 우측 하단(width-1, height-1)
@@ -281,10 +303,10 @@ void Engine::OnMouseMove(int mouseX, int mouseY)
     camera.UpdateMouse(mouseNdcX, mouseNdcY);
 }
 
-void Engine::OnMouseClick(int mouseX, int mouseY)
+void Engine::OnMouseClick(int MouseX, int MouseY)
 {
-    mouseX = mouseX;
-    mouseY = mouseY;
+    mouseX = MouseX + guiManager.guiWidth / 2;
+    mouseY = MouseY;
 
     mouseNdcX = mouseX * 2.0f / resolution.width - 1.0f;
     mouseNdcY = -mouseY * 2.0f / resolution.height + 1.0f;
@@ -326,6 +348,28 @@ LRESULT Engine::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     case WM_MOUSEMOVE:
         OnMouseMove(LOWORD(lParam), HIWORD(lParam));
         break;
+    case WM_LBUTTONDOWN:
+        if (!leftButton)
+        {
+            dragStartFlag = true; // 드래그를 새로 시작하는지 확인
+        }
+        leftButton = true;
+        OnMouseClick(LOWORD(lParam), HIWORD(lParam));
+        break;
+    case WM_LBUTTONUP:
+        leftButton = false;
+        break;
+    case WM_RBUTTONDOWN:
+        if (!rightButton)
+        {
+            dragStartFlag = true; // 드래그를 새로 시작하는지 확인
+        }
+        rightButton = true;
+        break;
+    case WM_RBUTTONUP:
+        rightButton = false;
+        break;
+
     case WM_KEYDOWN:
         keyPressed[wParam] = true;
         if (wParam == VK_ESCAPE) // ESC키 종료
@@ -359,6 +403,154 @@ LRESULT Engine::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     }
 
     return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+shared_ptr<Actor> Engine::PickClosest(const Ray &pickingRay, float &minDist)
+{
+    minDist = 1e5f;
+    shared_ptr<Actor> minModel = nullptr;
+    for (auto &actor : level.actors)
+    {
+        float dist = 0.0f;
+        if (actor->isPickable &&
+            pickingRay.Intersects(actor->boundingSphere, dist) &&
+            dist < minDist)
+        {
+            minModel = actor;
+            minDist = dist;
+        }
+    }
+    return minModel;
+}
+
+void Engine::ProcessMouseControl()
+{
+    static shared_ptr<Actor> activeModel = nullptr;
+    static float prevRatio = 0.0f;
+    static Vector3 prevPos(0.0f);
+    static Vector3 prevVector(0.0f);
+
+    // 적용할 회전과 이동 초기화
+    Quaternion q =
+        Quaternion::CreateFromAxisAngle(Vector3(1.0f, 0.0f, 0.0f), 0.0f);
+    Vector3 dragTranslation(0.0f);
+    Vector3 pickPoint(0.0f);
+    float dist = 0.0f;
+
+    // 사용자가 두 버튼 중 하나만 누른다고 가정.
+    if (leftButton || rightButton)
+    {
+        const Matrix viewRow = camera.GetViewRow();
+        const Matrix projRow = camera.GetProjRow();
+        const Vector3 ndcNear = Vector3(mouseNdcX, mouseNdcY, 0.0f);
+        const Vector3 ndcFar = Vector3(mouseNdcX, mouseNdcY, 1.0f);
+        const Matrix invProjView = (viewRow * projRow).Invert();
+        const Vector3 worldNear = Vector3::Transform(ndcNear, invProjView);
+        const Vector3 worldFar = Vector3::Transform(ndcFar, invProjView);
+        Vector3 dir = worldFar - worldNear;
+        dir.Normalize();
+        const Ray curRay = SimpleMath::Ray(worldNear, dir);
+
+        // 이전 프레임에서 아무 물체도 선택되지 않았을 경우에는 새로 선택
+        if (!activeModel)
+        {
+            auto newModel = PickClosest(curRay, dist);
+            if (newModel)
+            {
+                cout << "Newly selected model: " << newModel->name << endl;
+                activeModel = newModel;
+                pickedModel = newModel; // GUI 조작용 포인터
+                pickPoint = curRay.position + dist * curRay.direction;
+                if (leftButton)
+                { // 왼쪽 버튼 회전 준비
+                    prevVector =
+                        pickPoint - activeModel->boundingSphere.Center;
+                    prevVector.Normalize();
+                }
+                else
+                { // 오른쪽 버튼 이동 준비
+                    dragStartFlag = false;
+                    prevRatio = dist / (worldFar - worldNear).Length();
+                    prevPos = pickPoint;
+                }
+            }
+        }
+        else
+        { // 이미 선택된 물체가 있었던 경우
+            if (leftButton)
+            { // 왼쪽 버튼으로 계속 회전
+                if (curRay.Intersects(activeModel->boundingSphere, dist))
+                {
+                    pickPoint = curRay.position + dist * curRay.direction;
+                }
+                else
+                {
+                    // 바운딩 스피어에 가장 가까운 점을 찾기
+                    Vector3 c =
+                        activeModel->boundingSphere.Center - worldNear;
+                    Vector3 centerToRay = dir.Dot(c) * dir - c;
+                    pickPoint =
+                        c +
+                        centerToRay *
+                            std::clamp(activeModel->boundingSphere.Radius /
+                                           centerToRay.Length(),
+                                       0.0f, 1.0f);
+                    pickPoint += worldNear;
+                }
+
+                Vector3 currentVector =
+                    pickPoint - activeModel->boundingSphere.Center;
+                currentVector.Normalize();
+                float theta = acos(prevVector.Dot(currentVector));
+                if (theta > 3.141592f / 180.0f * 3.0f)
+                {
+                    Vector3 axis = prevVector.Cross(currentVector);
+                    axis.Normalize();
+                    q = SimpleMath::Quaternion::CreateFromAxisAngle(axis,
+                                                                    theta);
+                    prevVector = currentVector;
+                }
+            }
+            else
+            { // 오른쪽 버튼으로 계속 이동
+                Vector3 newPos = worldNear + prevRatio * (worldFar - worldNear);
+                if ((newPos - prevPos).Length() > 1e-3)
+                {
+                    dragTranslation = newPos - prevPos;
+                    prevPos = newPos;
+                }
+                pickPoint = newPos; // Cursor sphere 그려질 위치
+            }
+        }
+    }
+    else
+    {
+        // 버튼에서 손을 땠을 경우에는 움직일 모델은 nullptr로 설정
+        activeModel = nullptr;
+
+        // pickedModel은 GUI 조작을 위해 마우스에서 손을 떼도 nullptr로
+        // 설정하지 않음
+    }
+
+    // Cursor sphere 그리기
+    if (activeModel)
+    {
+        Vector3 translation = activeModel->worldRow.Translation();
+        activeModel->worldRow.Translation(Vector3(0.0f));
+        activeModel->UpdateWorldRow(
+            activeModel->worldRow * Matrix::CreateFromQuaternion(q) *
+            Matrix::CreateTranslation(dragTranslation + translation));
+        activeModel->boundingSphere.Center =
+            activeModel->worldRow.Translation();
+
+        // 충돌 지점에 작은 구 그리기
+        cursorSphere->isVisible = true;
+        cursorSphere->UpdateWorldRow(Matrix::CreateTranslation(pickPoint));
+    }
+    else
+    {
+        cursorSphere->isVisible = false;
+    }
 }
 
 bool Engine::InitMainWindow(const Resolution &res)
