@@ -75,8 +75,8 @@ public:
 
     string name = "NoName";
 
-    D3D11PSO wirePSO;
-    D3D11PSO solidPSO;
+    D3D11PSO wirePSO = Graphics::defaultWirePSO;
+    D3D11PSO solidPSO = Graphics::defaultSolidPSO;
 
 private:
     shared_ptr<Mesh> boundingBoxMesh;

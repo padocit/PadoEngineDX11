@@ -47,7 +47,7 @@ float3 DiffuseIBL(float3 albedo, float3 normalWorld, float3 pixelToEye,
 {
     float3 F0 = lerp(Fdielectric, albedo, metallic);
     float3 F = SchlickFresnel(F0, max(0.0, dot(normalWorld, pixelToEye)));
-    // kd: Specular+Diffuse 에너지 보존
+    // Metalic -> (Specular + Diffuse) Conservation of Energy
     float3 kd = lerp(1.0 - F, 0.0, metallic); // 1.0 - F = Diffuse 성분의 최대값
     float3 irradiance = irradianceIBLTex.SampleLevel(linearWrapSampler, normalWorld, 0).rgb;
     
@@ -57,9 +57,9 @@ float3 DiffuseIBL(float3 albedo, float3 normalWorld, float3 pixelToEye,
 float3 SpecularIBL(float3 albedo, float3 normalWorld, float3 pixelToEye,
                    float metallic, float roughness)
 {
-    float2 specularBRDF = brdfTex.SampleLevel(linearClampSampler, float2(dot(normalWorld, pixelToEye), 1.0 - roughness), 0.0f).rg;
+    float2 specularBRDF = brdfTex.SampleLevel(linearClampSampler, float2(dot(normalWorld, pixelToEye), 1.0 - roughness), 0.0f).rg; // wrap 샘플러 사용 시 가장자리 문제
     float3 specularIrradiance = specularIBLTex.SampleLevel(linearWrapSampler, reflect(-pixelToEye, normalWorld),
-                                                            2 + roughness * 5.0f).rgb;
+                                                            2 + roughness * 5.0f).rgb; // Roughness -> Specular Map LOD
     float3 F0 = lerp(Fdielectric, albedo, metallic);
 
     return (F0 * specularBRDF.x + specularBRDF.y) * specularIrradiance;

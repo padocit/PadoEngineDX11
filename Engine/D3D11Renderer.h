@@ -90,6 +90,11 @@ public:
     // Render(FP, HDR) -> PostEffects -> PostProcess
     PostProcess postProcess;
 
+    // 여러 예제들 공용
+    std::shared_ptr<Actor> screenSquare; // PostEffect에 사용
+    std::shared_ptr<Actor>
+        lightSphere[MAX_LIGHTS]; // 조명 위치 표시 (Debugging)
+
 
 private:
 	// Properties
@@ -149,7 +154,5 @@ private:
 	// cbuffer
     ComPtr<ID3D11Buffer> globalConstsGPU;
 
-    // 여러 예제들 공용
-    std::shared_ptr<Actor> screenSquare; // PostEffect에 사용
 };
 

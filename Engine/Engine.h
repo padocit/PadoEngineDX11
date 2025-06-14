@@ -4,6 +4,7 @@
 #include "GUIManager.h"
 #include "Camera.h"
 #include "Level.h"
+#include "Actor.h"
 
 class Engine
 {

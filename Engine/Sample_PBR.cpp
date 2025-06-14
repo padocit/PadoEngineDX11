@@ -70,7 +70,7 @@ bool Sample_PBR::InitLevel()
 
     // PBR Sphere <- UE PBR
     {
-        MeshData sphereData = GeometryGenerator::MakeSphere(0.5f, 200, 200, {2.0f, 2.0f}); 
+        MeshData sphereData = GeometryGenerator::MakeSphere(0.5f, 200, 200, {2.0f, 2.0f});  // texScale 2.0f 
         Vector3 center = Vector3(0.0f, 0.5f, 1.0f); 
         string path = "../Assets/Textures/PBR/worn-painted-metal-ue/";
         sphereData.albedoTextureFilename = path + "worn-painted-metal_albedo.png";

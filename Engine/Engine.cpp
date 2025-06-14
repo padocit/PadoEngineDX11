@@ -112,6 +112,49 @@ bool Engine::Initialize()
 // 여러 Sample에서 공통적으로 사용하기 좋은 장면 설정
 bool Engine::InitLevel()
 {
+    // 조명 설정
+    {
+        auto &gConsts = renderer.globalConstsCPU;
+        // point light
+        gConsts.lights[0].radiance = Vector3(5.0f);
+        gConsts.lights[0].position = Vector3(0.0f, 1.5f, 1.1f);
+        gConsts.lights[0].radius = 0.04f;
+        gConsts.lights[0].type =
+            LIGHT_POINT | LIGHT_SHADOW; // Point with shadow
+
+        // off
+        gConsts.lights[1].type = LIGHT_OFF;
+        gConsts.lights[2].type = LIGHT_OFF;
+    }
+
+    // 조명 위치 표시 (Debugging)
+    {
+        for (int i = 0; i < MAX_LIGHTS; i++)
+        {
+            auto &lightSphere = renderer.lightSphere[i];
+            MeshData sphere = GeometryGenerator::MakeSphere(1.0f, 20, 20);
+            lightSphere = make_shared<Actor>(
+                renderer.GetDevice(), renderer.GetContext(), vector{sphere});
+            lightSphere->UpdateWorldRow(Matrix::CreateTranslation(
+                renderer.globalConstsCPU.lights[i].position));
+            lightSphere->materialConsts.GetCpu().albedoFactor =
+                Vector3(0.0f);
+            lightSphere->materialConsts.GetCpu().emissionFactor =
+                Vector3(1.0f, 1.0f, 0.0f);
+            lightSphere->castShadow =
+                false; // 조명 표시 물체들은 그림자 X
+
+            //if (renderer.globalConstsCPU.lights[i].type == 0)
+            lightSphere->isVisible = false; // 기본으로 꺼둠
+
+            lightSphere->name = "LightSphere" + std::to_string(i);
+            lightSphere->isPickable = false;
+
+            // using default PSO
+            level.AddActor(lightSphere); // 리스트에 등록
+        }
+    }
+
     return false;
 }
 
@@ -194,6 +237,17 @@ void Engine::UpdateGUI()
     //    ImGui::TreePop();
     //}
 
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    if (ImGui::TreeNode("Light"))
+    {
+        ImGui::SliderFloat3("Position",
+                            &renderer.globalConstsCPU.lights[0].position.x,
+                            -5.0f, 5.0f);
+        ImGui::SliderFloat("Radius", &renderer.globalConstsCPU.lights[0].radius,
+                           0.0f,
+                           0.5f);
+        ImGui::TreePop();
+    }
 }
 
 void Engine::Render()
