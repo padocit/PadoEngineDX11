@@ -69,9 +69,9 @@ bool Sample_PBR::InitLevel()
     }    
 
     // PBR Sphere <- UE PBR
-    {
+    { 
         MeshData sphereData = GeometryGenerator::MakeSphere(0.5f, 200, 200, {2.0f, 2.0f});  // texScale 2.0f 
-        Vector3 center = Vector3(0.0f, 0.5f, 1.0f); 
+        Vector3 center = Vector3(0.0f, 0.5f, 4.0f); 
         string path = "../Assets/Textures/PBR/worn-painted-metal-ue/";
         sphereData.albedoTextureFilename = path + "worn-painted-metal_albedo.png";
         sphereData.normalTextureFilename = path + "worn-painted-metal_normal-dx.png";
@@ -96,6 +96,58 @@ bool Sample_PBR::InitLevel()
         sphere->SetPSO(Graphics::defaultWirePSO, Graphics::defaultSolidPSO);
 
         level.AddActor(sphere);
+    }
+
+    // Character
+    {
+        string path = "../Assets/Characters/UEMannequin/";
+        auto meshes = GeometryGenerator::ReadFromFile(path, "MannequinBlenderASCII.fbx");        
+
+        Vector3 center(0.0f, 0.0f, 2.0f);
+        character = make_shared<Actor>(renderer.GetDevice(),
+                                           renderer.GetContext(), meshes);
+        character->materialConsts.GetCpu().invertNormalMapY =
+            false; // GLTF는 true
+        character->materialConsts.GetCpu().albedoFactor = Vector3(1.0f);
+        character->materialConsts.GetCpu().roughnessFactor = 0.3f;
+        character->materialConsts.GetCpu().metallicFactor = 0.8f;
+        character->UpdateWorldRow(Matrix::CreateTranslation(center));
+        character->UpdateConstantBuffers(renderer.GetDevice(),
+                                      renderer.GetContext());
+
+        character->isPickable = true; // 마우스로 선택/이동 가능
+        character->name = "character";
+
+        character->SetPSO(Graphics::defaultWirePSO, Graphics::defaultSolidPSO);
+
+        level.AddActor(character);
+    }
+
+    // 3D Model
+    {
+        string path = "../Assets/Models/DamagedHelmet/";
+        auto meshes =
+            GeometryGenerator::ReadFromFile(path, "DamagedHelmet.gltf");
+
+        Vector3 center(3.0f, 0.05f, 2.0f);
+        helmet = make_shared<Actor>(renderer.GetDevice(),
+                                       renderer.GetContext(), meshes);
+        helmet->materialConsts.GetCpu().invertNormalMapY =
+            true; // GLTF는 true
+        helmet->materialConsts.GetCpu().albedoFactor = Vector3(1.0f);
+        helmet->materialConsts.GetCpu().roughnessFactor = 0.3f;
+        helmet->materialConsts.GetCpu().metallicFactor = 0.8f;
+        helmet->UpdateWorldRow(Matrix::CreateTranslation(center));
+        helmet->UpdateConstantBuffers(renderer.GetDevice(),
+                                         renderer.GetContext());
+
+        helmet->isPickable = true; // 마우스로 선택/이동 가능
+        helmet->name = "helmet";
+
+        helmet->SetPSO(Graphics::defaultWirePSO, Graphics::defaultSolidPSO);
+
+        level.AddActor(helmet);
+
     }
 
     // cbuffer init
@@ -187,6 +239,102 @@ void Sample_PBR::UpdateGUI()
         if (flag)
         {
             sphere->UpdateConstantBuffers(renderer.GetDevice(), renderer.GetContext());
+        }
+
+
+        ImGui::TreePop();
+    }
+
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    if (ImGui::TreeNode("Character"))
+    {
+        ImGui::Checkbox("Draw normals", &character->drawNormals);
+
+        int flag = 0;
+        flag += ImGui::SliderFloat(
+            "Metallic", &character->materialConsts.GetCpu().metallicFactor,
+            0.0f,
+            1.0f);
+        flag += ImGui::SliderFloat(
+            "Roughness", &character->materialConsts.GetCpu().roughnessFactor,
+            0.0f,
+            1.0f);
+        flag += ImGui::CheckboxFlags(
+            "AlbedoTexture", &character->materialConsts.GetCpu().useAlbedoMap,
+            1);
+        flag += ImGui::CheckboxFlags(
+            "EmissiveTexture",
+            &character->materialConsts.GetCpu().useEmissiveMap, 1);
+        flag += ImGui::CheckboxFlags(
+            "Use NormalMapping",
+            &character->materialConsts.GetCpu().useNormalMap, 1);
+        flag += ImGui::CheckboxFlags(
+            "Use AO", &character->materialConsts.GetCpu().useAOMap, 1);
+        flag += ImGui::CheckboxFlags(
+            "Use HeightMapping", &character->meshConsts.GetCpu().useHeightMap,
+            1);
+        flag += ImGui::SliderFloat("HeightScale",
+                                   &character->meshConsts.GetCpu().heightScale,
+            0.0f, 0.1f);
+        flag += ImGui::CheckboxFlags(
+            "Use MetallicMap",
+            &character->materialConsts.GetCpu().useMetallicMap, 1);
+        flag += ImGui::CheckboxFlags(
+            "Use RoughnessMap",
+            &character->materialConsts.GetCpu().useRoughnessMap, 1);
+
+        if (flag)
+        {
+            character->UpdateConstantBuffers(renderer.GetDevice(),
+                                             renderer.GetContext());
+        }
+
+
+        ImGui::TreePop();
+    }
+
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    if (ImGui::TreeNode("Helmet"))
+    {
+        ImGui::Checkbox("Draw normals", &helmet->drawNormals);
+
+        int flag = 0;
+        flag += ImGui::SliderFloat(
+            "Metallic", &helmet->materialConsts.GetCpu().metallicFactor,
+            0.0f,
+            1.0f);
+        flag += ImGui::SliderFloat(
+            "Roughness", &helmet->materialConsts.GetCpu().roughnessFactor,
+            0.0f,
+            1.0f);
+        flag += ImGui::CheckboxFlags(
+            "AlbedoTexture", &helmet->materialConsts.GetCpu().useAlbedoMap,
+            1);
+        flag += ImGui::CheckboxFlags(
+            "EmissiveTexture", &helmet->materialConsts.GetCpu().useEmissiveMap,
+            1);
+        flag += ImGui::CheckboxFlags(
+            "Use NormalMapping", &helmet->materialConsts.GetCpu().useNormalMap,
+            1);
+        flag += ImGui::CheckboxFlags(
+            "Use AO", &helmet->materialConsts.GetCpu().useAOMap, 1);
+        flag += ImGui::CheckboxFlags(
+            "Use HeightMapping", &helmet->meshConsts.GetCpu().useHeightMap,
+            1);
+        flag += ImGui::SliderFloat("HeightScale",
+                                   &helmet->meshConsts.GetCpu().heightScale,
+            0.0f, 0.1f);
+        flag += ImGui::CheckboxFlags(
+            "Use MetallicMap", &helmet->materialConsts.GetCpu().useMetallicMap,
+            1);
+        flag += ImGui::CheckboxFlags(
+            "Use RoughnessMap",
+            &helmet->materialConsts.GetCpu().useRoughnessMap, 1);
+
+        if (flag)
+        {
+            helmet->UpdateConstantBuffers(renderer.GetDevice(),
+                                             renderer.GetContext());
         }
 
 

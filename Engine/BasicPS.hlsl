@@ -59,7 +59,7 @@ float3 SpecularIBL(float3 albedo, float3 normalWorld, float3 pixelToEye,
 {
     float2 specularBRDF = brdfTex.SampleLevel(linearClampSampler, float2(dot(normalWorld, pixelToEye), 1.0 - roughness), 0.0f).rg; // wrap 샘플러 사용 시 가장자리 문제
     float3 specularIrradiance = specularIBLTex.SampleLevel(linearWrapSampler, reflect(-pixelToEye, normalWorld),
-                                                            2 + roughness * 5.0f).rgb; // Roughness -> Specular Map LOD
+                                                            1 + roughness * 8.0f).rgb; // Roughness -> Specular Map LOD
     float3 F0 = lerp(Fdielectric, albedo, metallic);
 
     return (F0 * specularBRDF.x + specularBRDF.y) * specularIrradiance;
@@ -119,6 +119,9 @@ PixelShaderOutput main(PixelShaderInput input)
     float3 emission = useEmissiveMap ? emissiveTex.SampleLevel(linearWrapSampler, input.texcoord, lodBias).rgb
                                      : emissionFactor;
     
+    ao = 0.3 + 0.7 * ao;
+    emission *= 2.0;
+    
     float3 ambientLighting = AmbientLightingByIBL(albedo.rgb, normalWorld, pixelToEye, ao, metallic, roughness) * strengthIBL;
     
     float3 directLighting = float3(0, 0, 0);
@@ -130,12 +133,12 @@ PixelShaderOutput main(PixelShaderInput input)
         if (lights[i].type)
         {
             float3 lightVec = lights[i].position - input.posWorld;
-            
             float lightDist = length(lightVec);
-            lightVec /= lightDist;
-            float3 halfway = normalize(pixelToEye + lightVec);
+            float lightDir = lightVec / lightDist;
+            
+            float3 halfway = normalize(pixelToEye + lightDir);
         
-            float NdotI = max(0.0, dot(normalWorld, lightVec));
+            float NdotI = max(0.0, dot(normalWorld, lightDir));
             float NdotH = max(0.0, dot(normalWorld, halfway));
             float NdotO = max(0.0, dot(normalWorld, pixelToEye));
         
@@ -151,7 +154,7 @@ PixelShaderOutput main(PixelShaderInput input)
             float3 G = SchlickGGX(NdotI, NdotO, roughness);
             float3 specularBRDF = (F * D * G) / max(1e-5, 4.0 * NdotI * NdotO); // ZeroDivision 방지
 
-            float3 radiance = lights[i].radiance * saturate((lights[i].fallOffEnd - length(lightVec)) / (lights[i].fallOffEnd - lights[i].fallOffStart));
+            float3 radiance = lights[i].radiance * saturate((lights[i].fallOffEnd - lightDist) / (lights[i].fallOffEnd - lights[i].fallOffStart));
 
             directLighting += (diffuseBRDF + specularBRDF) * radiance * NdotI;
         }

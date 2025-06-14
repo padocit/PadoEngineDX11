@@ -458,6 +458,7 @@ void ModelLoader::UpdateTangents()
         for (size_t i = 0; i < mesh.vertices.size(); i++)
         {
             mesh.vertices[i].tangentModel = tangents[i];
+            // bitangents는 shader 안에서 계산
         }
 
         if (mesh.skinnedVertices.size() > 0)

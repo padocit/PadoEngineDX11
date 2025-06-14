@@ -18,5 +18,7 @@ public:
 
 private:
     shared_ptr<Actor> sphere;
+    shared_ptr<Actor> character;
+    shared_ptr<Actor> helmet;
     shared_ptr<TerrainActor> terrain;
 };
