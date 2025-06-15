@@ -304,7 +304,8 @@ void Engine::OnMouseMove(int MouseX, int MouseY)
     // 마우스 커서의 위치를 NDC로 변환
     // 마우스 커서는 좌측 상단 (0, 0), 우측 하단(width-1, height-1)
     // NDC는 좌측 하단이 (-1, -1), 우측 상단(1, 1)
-    mouseNdcX = mouseX * 2.0f / (resolution.width - guiManager.guiWidth) - 1.0f;
+    //mouseNdcX = mouseX * 2.0f / (resolution.width - guiManager.guiWidth) - 1.0f;
+    mouseNdcX = mouseX * 2.0f / resolution.width - 1.0f;
     mouseNdcY = -mouseY * 2.0f / resolution.height + 1.0f;
 
     // 커서가 화면 밖으로 나갔을 경우 범위 조절
@@ -321,7 +322,8 @@ void Engine::OnMouseClick(int MouseX, int MouseY)
     mouseX = MouseX;
     mouseY = MouseY;
 
-    mouseNdcX = mouseX * 2.0f / (resolution.width - guiManager.guiWidth) - 1.0f;
+    //mouseNdcX = mouseX * 2.0f / (resolution.width - guiManager.guiWidth) - 1.0f;
+    mouseNdcX = mouseX * 2.0f / resolution.width - 1.0f;
     mouseNdcY = -mouseY * 2.0f / resolution.height + 1.0f;
 }
 

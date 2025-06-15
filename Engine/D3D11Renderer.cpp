@@ -286,7 +286,8 @@ void D3D11Renderer::CreateDepthBuffers()
 
 void D3D11Renderer::SetResolution(const Resolution& resolution)
 {
-    screenWidth = resolution.width - guiWidth;
+    //screenWidth = resolution.width - guiWidth;
+    screenWidth = resolution.width;
     screenHeight = resolution.height;
     aspectRatio = resolution.AspectRatio();
 }
@@ -297,7 +298,8 @@ void D3D11Renderer::SetMainViewport()
     ZeroMemory(&screenViewport, sizeof(D3D11_VIEWPORT));
     screenViewport.TopLeftX = 0;
     screenViewport.TopLeftY = 0;
-    screenViewport.Width = float(screenWidth - guiWidth);
+    //screenViewport.Width = float(screenWidth - guiWidth);
+    screenViewport.Width = float(screenWidth);
     screenViewport.Height = float(screenHeight);
     screenViewport.MinDepth = 0.0f;
     screenViewport.MaxDepth = 1.0f;
@@ -570,5 +572,6 @@ void D3D11Renderer::SetPipelineState(const D3D11PSO &pso)
 
 float D3D11Renderer::GetAspectRatio() const
 {
-    return float(screenWidth - guiWidth) / screenHeight;
+    //return float(screenWidth - guiWidth) / screenHeight;
+    return float(screenWidth) / screenHeight;
 }
