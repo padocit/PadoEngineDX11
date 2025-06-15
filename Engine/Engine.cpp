@@ -44,6 +44,8 @@ Engine::Engine(int Width, int Height)
 
     camera.SetAspectRatio(aspect);
     camera_debug.SetAspectRatio(aspect);
+
+    level = make_shared<Level>();
 }
 
 Engine::~Engine()
@@ -115,6 +117,16 @@ bool Engine::Initialize()
 // 여러 Sample에서 공통적으로 사용하기 좋은 장면 설정
 bool Engine::InitLevel()
 {
+    // 환경 박스 초기화
+    MeshData skyboxMesh = GeometryGenerator::MakeBox(40.0f);
+    std::reverse(skyboxMesh.indices.begin(), skyboxMesh.indices.end());
+    shared_ptr<Actor> skybox = make_shared<Actor>(
+        renderer.GetDevice(), renderer.GetContext(), vector{skyboxMesh});
+    skybox->name = "SkyBox";
+    skybox->SetPSO(Graphics::skyboxWirePSO, Graphics::skyboxSolidPSO);
+
+    level->SetSkybox(skybox);
+
     // 조명 설정
     {
         auto &gConsts = renderer.globalConstsCPU;
@@ -154,7 +166,7 @@ bool Engine::InitLevel()
             lightSphere->isPickable = false;
 
             // using default PSO
-            level.AddActor(lightSphere); // 리스트에 등록
+            level->AddActor(lightSphere); // 리스트에 등록
         }
     }
 
@@ -169,7 +181,7 @@ bool Engine::InitLevel()
         cursorSphere->materialConsts.GetCpu().emissionFactor =
             Vector3(0.0f, 1.0f, 0.0f);
 
-        level.AddActor(cursorSphere);
+        level->AddActor(cursorSphere);
     }
 
 
@@ -186,7 +198,7 @@ void Engine::Update(float dt)
 
     ProcessMouseControl();
     
-    level.Update(renderer.GetDevice(), renderer.GetContext());
+    level->Update(renderer.GetDevice(), renderer.GetContext());
 }
 
 void Engine::UpdateGUI()
@@ -268,13 +280,14 @@ void Engine::UpdateGUI()
         ImGui::SliderFloat("Radius", &renderer.globalConstsCPU.lights[0].radius,
                            0.0f,
                            0.5f);
+        ImGui::Checkbox("Debug Sphere", &renderer.lightSphere[0]->isVisible);
         ImGui::TreePop();
     }
 }
 
 void Engine::Render()
 {
-    renderer.Render(&level);
+    renderer.Render();
     renderer.PostRender();
 
     guiManager.Render();
@@ -285,13 +298,13 @@ void Engine::Render()
 void Engine::OnMouseMove(int MouseX, int MouseY)
 {
 
-    mouseX = MouseX + guiManager.guiWidth / 2;
+    mouseX = MouseX;
     mouseY = MouseY;
 
     // 마우스 커서의 위치를 NDC로 변환
     // 마우스 커서는 좌측 상단 (0, 0), 우측 하단(width-1, height-1)
     // NDC는 좌측 하단이 (-1, -1), 우측 상단(1, 1)
-    mouseNdcX = mouseX * 2.0f / resolution.width - 1.0f;
+    mouseNdcX = mouseX * 2.0f / (resolution.width - guiManager.guiWidth) - 1.0f;
     mouseNdcY = -mouseY * 2.0f / resolution.height + 1.0f;
 
     // 커서가 화면 밖으로 나갔을 경우 범위 조절
@@ -305,10 +318,10 @@ void Engine::OnMouseMove(int MouseX, int MouseY)
 
 void Engine::OnMouseClick(int MouseX, int MouseY)
 {
-    mouseX = MouseX + guiManager.guiWidth / 2;
+    mouseX = MouseX;
     mouseY = MouseY;
 
-    mouseNdcX = mouseX * 2.0f / resolution.width - 1.0f;
+    mouseNdcX = mouseX * 2.0f / (resolution.width - guiManager.guiWidth) - 1.0f;
     mouseNdcY = -mouseY * 2.0f / resolution.height + 1.0f;
 }
 
@@ -409,7 +422,7 @@ shared_ptr<Actor> Engine::PickClosest(const Ray &pickingRay, float &minDist)
 {
     minDist = 1e5f;
     shared_ptr<Actor> minModel = nullptr;
-    for (auto &actor : level.actors)
+    for (auto &actor : level->actors)
     {
         float dist = 0.0f;
         if (actor->isPickable &&
@@ -600,6 +613,8 @@ bool Engine::InitDirect3D(const Resolution &res)
 {
     if (!renderer.Initialize(res, mainWindow))
         return false;
+
+    renderer.SetCurrentLevel(level);
 
     return true;
 }

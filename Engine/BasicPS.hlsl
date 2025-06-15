@@ -134,11 +134,11 @@ PixelShaderOutput main(PixelShaderInput input)
         {
             float3 lightVec = lights[i].position - input.posWorld;
             float lightDist = length(lightVec);
-            float lightDir = lightVec / lightDist;
+            lightVec /= lightDist;
             
-            float3 halfway = normalize(pixelToEye + lightDir);
+            float3 halfway = normalize(pixelToEye + lightVec);
         
-            float NdotI = max(0.0, dot(normalWorld, lightDir));
+            float NdotI = max(0.0, dot(normalWorld, lightVec));
             float NdotH = max(0.0, dot(normalWorld, halfway));
             float NdotO = max(0.0, dot(normalWorld, pixelToEye));
         

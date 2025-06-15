@@ -24,18 +24,23 @@ public:
 	// Update & Render
     void Update(Camera* camera, float dt);
     //virtual void UpdateLights(float dt);
-    virtual void RenderDepthOnly(Level *level);
+    void RenderBegin();
+    virtual void RenderDepthOnly();
     //virtual void RenderShadowMaps();
-    //virtual void RenderOpaqueObjects();
-    //virtual void RenderMirror();
-    void Render(Level* level);
+    virtual void RenderOpaqueObjects();
+    virtual void RenderMirror();
+    void Render();
+    void RenderEnd();
     void PostRender();
     void SwapBuffer();
 
+    // Level
+    void SetCurrentLevel(const shared_ptr<Level> &newLevel);
+
 	// Screen
     void SetResolution(const Resolution &resolution);
-    void SetMainViewPort();
-    void SetMainViewPortNoGUIWidth();
+    void SetMainViewport();
+    void SetMainViewportNoGUIWidth();
     float GetAspectRatio() const;
     void SetScreenSize(UINT width, UINT height);
 
@@ -66,25 +71,26 @@ public:
                       wstring brdfFilename);
 
     void UpdateGlobalConstants(const float &dt, const Vector3 &eyeWorld,
-                               const Matrix &viewRow, const Matrix &projRow);
-                               //const Matrix &refl = Matrix());
+                               const Matrix &viewRow, const Matrix &projRow,
+                               const Matrix &refl = Matrix());
     void SetGlobalConsts(ComPtr<ID3D11Buffer> &globalConstsGPU);
 
     void SetPipelineState(const D3D11PSO &pso);
     void CreateBuffers();
     void CreateDepthBuffers();
 
-    void Prepare();
-
 public:
+    // Level
+    shared_ptr<Level> currentLevel;
+
     // GUI 연동
     GlobalConstants globalConstsCPU;
+    GlobalConstants reflectGlobalConstsCPU;
     int guiWidth = 0;
     bool drawAsWire = false;
     int postProcessFlag = 0;
     int postEffectsFlag = 0;
     PostEffectsConstants postEffectsConstsCPU;
-    ComPtr<ID3D11Buffer> postEffectsConstsGPU;
     bool useMSAA = true;
 
     // Render(FP, HDR) -> PostEffects -> PostProcess
@@ -102,7 +108,7 @@ private:
 	int screenHeight;
 	float aspectRatio;
 	UINT numQualityLevels = 0;
-    float clearColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+    const float clearColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
     
     // 공용 텍스처(IBL)
     ComPtr<ID3D11ShaderResourceView> envSRV;
@@ -153,6 +159,7 @@ private:
 
 	// cbuffer
     ComPtr<ID3D11Buffer> globalConstsGPU;
-
+    ComPtr<ID3D11Buffer> postEffectsConstsGPU;
+    ComPtr<ID3D11Buffer> reflectGlobalConstsGPU;
 };
 

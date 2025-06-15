@@ -33,7 +33,7 @@ bool Sample_Phong::InitLevel()
         // PSO
         box->SetPSO(Graphics::phongWirePSO, Graphics::phongSolidPSO);
 
-        level.AddActor(box);
+        level->AddActor(box);
     }
 
     // cbuffer (useBlinnPhong) √ ±‚»≠

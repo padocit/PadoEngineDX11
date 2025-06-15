@@ -11,7 +11,7 @@ using namespace std;
 
 int main()
 {
-    unique_ptr<Engine> sample = make_unique<Sample_PBR>();
+    unique_ptr<Engine> sample = make_unique<Sample_Basic>();
 
 	if (!Engine::Create(move(sample)))
 	{

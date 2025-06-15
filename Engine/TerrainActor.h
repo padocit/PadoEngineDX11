@@ -1,3 +1,6 @@
+/*
+* Tessellation 사용하는 Actor
+*/
 #pragma once
 #include "Actor.h"
 class TerrainActor : public Actor

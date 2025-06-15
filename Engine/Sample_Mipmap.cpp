@@ -28,7 +28,7 @@ bool Sample_Mipmap::InitLevel()
         skybox->name = "SkyBox";
         skybox->SetPSO(Graphics::skyboxWirePSO, Graphics::skyboxSolidPSO);
 
-        level.SetSkybox(skybox);
+        level->SetSkybox(skybox);
     }
 
     // Sphere: SampleLevel() - Manual LOD
@@ -46,7 +46,7 @@ bool Sample_Mipmap::InitLevel()
 
         sphere->SetPSO(Graphics::defaultWirePSO, Graphics::mipmapSolidPSO);
 
-        level.AddActor(sphere);
+        level->AddActor(sphere);
     }
 
     // Ground: Sample() - Auto LOD
@@ -65,7 +65,7 @@ bool Sample_Mipmap::InitLevel()
 
         ground->SetPSO(Graphics::defaultWirePSO, Graphics::defaultSolidPSO);
         
-        level.AddActor(ground);
+        level->AddActor(ground);
     }  
 
     // cbuffer init

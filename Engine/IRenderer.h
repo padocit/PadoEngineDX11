@@ -25,6 +25,6 @@ public:
 
     // 화면 설정
     virtual void SetResolution(const Resolution &resolution) = 0;
-    virtual void SetMainViewPort() = 0;
+    virtual void SetMainViewport() = 0;
     virtual float GetAspectRatio() const = 0;
 };

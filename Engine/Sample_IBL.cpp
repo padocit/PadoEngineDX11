@@ -28,7 +28,7 @@ bool Sample_IBL::InitLevel()
         skybox->name = "SkyBox";
         skybox->SetPSO(Graphics::skyboxWirePSO, Graphics::skyboxSolidPSO);
 
-        level.SetSkybox(skybox);
+        level->SetSkybox(skybox);
     }
 
     // Sphere
@@ -47,11 +47,11 @@ bool Sample_IBL::InitLevel()
 
         sphere->SetPSO(Graphics::defaultWirePSO, Graphics::iblSolidPSO);
 
-        level.AddActor(sphere);
+        level->AddActor(sphere);
     }
 
     // cbuffer
-    iblConstsCPU.fresnelR0 = Vector3(1.0, 0.71, 0.29); // Gold
+    iblConstsCPU.fresnelR0 = Vector3(1.0f, 0.71f, 0.29f); // Gold
     D3D11Utils::CreateConstBuffer(Engine::Get()->GetRenderer().GetDevice(),
                                   iblConstsCPU, iblConstsGPU);
     Engine::Get()->GetRenderer().GetContext()->PSSetConstantBuffers(

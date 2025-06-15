@@ -21,11 +21,13 @@ bool D3D11Renderer::Initialize(const Resolution &resolution, HWND hWnd)
 
     CreateBuffers(); // backbuffer 포함
 
-    SetMainViewPort();
+    SetMainViewport();
 
     // 공통으로 쓰이는 cbuffers
     D3D11Utils::CreateConstBuffer(device, globalConstsCPU,
                                   globalConstsGPU);
+    D3D11Utils::CreateConstBuffer(device, reflectGlobalConstsCPU,
+                                  reflectGlobalConstsGPU);
 
     // 그림자맵 렌더링할 때 사용할 GlobalConsts들 별도 생성
     //for (int i = 0; i < MAX_LIGHTS; i++)
@@ -48,14 +50,18 @@ bool D3D11Renderer::Initialize(const Resolution &resolution, HWND hWnd)
 void D3D11Renderer::Update(Camera* camera, float dt)
 {
     const Vector3 eyeWorld = camera->GetEyePos();
-    //const Matrix reflectRow = Matrix::CreateReflection(mirrorPlane);
+    const Matrix reflectRow = Matrix::CreateReflection(currentLevel->mirrorPlane);
     const Matrix viewRow = camera->GetViewRow();
     const Matrix projRow = camera->GetProjRow();
 
     // UpdateLights(dt);
 
     // 공용 cbuffer 업데이트
-    UpdateGlobalConstants(dt, eyeWorld, viewRow, projRow);
+    UpdateGlobalConstants(dt, eyeWorld, viewRow, projRow, reflectRow);
+
+    // 거울
+    if (currentLevel->mirror)
+        currentLevel->mirror->UpdateConstantBuffers(device, context);
 
     // 조명의 위치 반영
     for (int i = 0; i < MAX_LIGHTS; i++)
@@ -285,7 +291,7 @@ void D3D11Renderer::SetResolution(const Resolution& resolution)
     aspectRatio = resolution.AspectRatio();
 }
 
-void D3D11Renderer::SetMainViewPort()
+void D3D11Renderer::SetMainViewport()
 {
     // Set the viewport
     ZeroMemory(&screenViewport, sizeof(D3D11_VIEWPORT));
@@ -299,7 +305,7 @@ void D3D11Renderer::SetMainViewPort()
     context->RSSetViewports(1, &screenViewport);
 }
 
-void D3D11Renderer::SetMainViewPortNoGUIWidth()
+void D3D11Renderer::SetMainViewportNoGUIWidth()
 {
     // Set the viewport
     ZeroMemory(&screenViewport, sizeof(D3D11_VIEWPORT));
@@ -322,7 +328,7 @@ void D3D11Renderer::SetScreenSize(UINT width, UINT height)
                              DXGI_FORMAT_UNKNOWN, // 현재 포맷 유지
                              0);
     CreateBuffers();
-    SetMainViewPort();
+    SetMainViewport();
 }
 
 void D3D11Renderer::CaptureScreen()
@@ -338,52 +344,104 @@ void D3D11Renderer::ResetPostProcess()
                            {backBufferRTV}, screenWidth, screenHeight, 4);
 }
 
-void D3D11Renderer::RenderDepthOnly(Level *level)
+void D3D11Renderer::RenderBegin()
+{
+    SetMainViewport();
+
+    // 공통으로 사용하는 샘플러 설정
+    context->VSSetSamplers(0, UINT(Graphics::sampleStates.size()),
+                           Graphics::sampleStates.data());
+    context->PSSetSamplers(0, UINT(Graphics::sampleStates.size()),
+                           Graphics::sampleStates.data());
+    context->HSSetSamplers(0, UINT(Graphics::sampleStates.size()),
+                           Graphics::sampleStates.data());
+    context->DSSetSamplers(0, UINT(Graphics::sampleStates.size()),
+                           Graphics::sampleStates.data());
+
+    // 공통으로 사용할 텍스춰들: "Common.hlsli"에서 register(t10)부터 시작
+    vector<ID3D11ShaderResourceView *> commonSRVs = {
+        envSRV.Get(), specularSRV.Get(), irradianceSRV.Get(), brdfSRV.Get()};
+    context->PSSetShaderResources(10, UINT(commonSRVs.size()),
+                                  commonSRVs.data());
+}
+
+void D3D11Renderer::RenderDepthOnly()
 {
     context->OMSetRenderTargets(0, NULL, // DepthOnly라서 RTV 불필요
                                 depthOnlyDSV.Get());
     context->ClearDepthStencilView(depthOnlyDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f,
                                    0);
     SetGlobalConsts(globalConstsGPU);
-    level->RenderDepthOnly(context);
-
-    SetPipelineState(Graphics::depthOnlyPSO);
-    if (level->skybox)
-        level->skybox->Render(context);
-    // if (m_mirror)
-    //     m_mirror->Render(m_context);
+    currentLevel->RenderDepthOnly(context);
 }
 
-void D3D11Renderer::Render(Level* level)
+void D3D11Renderer::RenderOpaqueObjects()
 {
-    SetMainViewPort();
+    // 다시 렌더링 해상도로 되돌리기
+    SetMainViewport();
 
-    // 공통으로 사용하는 샘플러 설정
-    context->VSSetSamplers(0, UINT(Graphics::sampleStates.size()),
-                           Graphics::sampleStates.data());
-    context->PSSetSamplers(0, UINT(Graphics::sampleStates.size()),
-                             Graphics::sampleStates.data());
-    context->HSSetSamplers(0, UINT(Graphics::sampleStates.size()),
-                             Graphics::sampleStates.data());
-    context->DSSetSamplers(0, UINT(Graphics::sampleStates.size()),
-                             Graphics::sampleStates.data());
-    
-    // 공통으로 사용할 텍스춰들: "Common.hlsli"에서 register(t10)부터 시작
-    vector<ID3D11ShaderResourceView *> commonSRVs = {
-        envSRV.Get(), specularSRV.Get(), irradianceSRV.Get(),
-        brdfSRV.Get()};
-    context->PSSetShaderResources(10, UINT(commonSRVs.size()),
-                                    commonSRVs.data());
+    // floatRTV
+    //context->ClearRenderTargetView(backBufferRTV.Get(), clearColor);
+    context->ClearRenderTargetView(floatRTV.Get(), clearColor);
+    context->OMSetRenderTargets(1, floatRTV.GetAddressOf(), defaultDSV.Get());
 
-    RenderDepthOnly(level);
+    context->ClearDepthStencilView(
+        defaultDSV.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    SetGlobalConsts(globalConstsGPU);
 
-    Prepare(); // floatRTV
-    level->Render(context, drawAsWire);
+    // Draw
+    currentLevel->Render(context, drawAsWire);
+}
 
+void D3D11Renderer::RenderMirror()
+{
+    if (currentLevel->mirrorAlpha < 1.0f && currentLevel->mirror) // 거울 반사 그려야하는 상황
+    {
+        // 거울 위치만 StencilBuffer에 1로 표시
+        SetPipelineState(Graphics::stencilMaskPSO);
+        currentLevel->mirror->Render(context);
+
+        // 거울 위치에 반사된 물체, skybox 렌더링
+        SetGlobalConsts(reflectGlobalConstsGPU);
+        context->ClearDepthStencilView(defaultDSV.Get(), D3D11_CLEAR_DEPTH,
+                                         1.0f, 0);
+
+        for (auto& actor : currentLevel->actors)
+        {
+            SetPipelineState(actor->GetReflectPSO(drawAsWire));
+            actor->Render(context);
+        }
+
+        SetPipelineState(drawAsWire ? Graphics::reflectSkyboxWirePSO
+                                    : Graphics::reflectSkyboxSolidPSO);
+        currentLevel->skybox->Render(context);
+
+        // 거울 자체의 재질을 "Blend"로 그림
+        SetPipelineState(drawAsWire ? Graphics::mirrorBlendWirePSO
+                                               : Graphics::mirrorBlendSolidPSO);
+        SetGlobalConsts(globalConstsGPU);
+        currentLevel->mirror->Render(context);
+
+    } // end of if (mirrorAlpha < 1.0f)
+}
+
+void D3D11Renderer::Render()
+{
+    RenderBegin();
+
+    RenderDepthOnly();
+    RenderOpaqueObjects();
+    RenderMirror();
+
+    RenderEnd();
+}
+
+void D3D11Renderer::RenderEnd()
+{
     // Example의 Render()에서 RT 설정을 해주지 않았을 경우에도
     // 백 버퍼에 GUI를 그리기위해 RT 설정
     // 예) Render()에서 ComputeShader만 사용
-    SetMainViewPort();
+    SetMainViewport();
     context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), NULL);
 }
 
@@ -395,7 +453,7 @@ void D3D11Renderer::PostRender()
                                   DXGI_FORMAT_R16G16B16A16_FLOAT);
 
     // PostEffects (m_globalConstsGPU 사용)
-    D3D11Renderer::SetMainViewPortNoGUIWidth();
+    D3D11Renderer::SetMainViewportNoGUIWidth();
     D3D11Renderer::SetPipelineState(Graphics::postEffectsPSO);
     D3D11Renderer::SetGlobalConsts(globalConstsGPU);
     vector<ID3D11ShaderResourceView *> postEffectsSRVs = {
@@ -428,6 +486,11 @@ void D3D11Renderer::SwapBuffer()
     swapChain->Present(1, 0); // 1: VSync
 }
 
+void D3D11Renderer::SetCurrentLevel(const shared_ptr<Level> &newLevel)
+{
+    currentLevel = newLevel;
+}
+
 void D3D11Renderer::InitCubemaps(wstring basePath, wstring envFilename,
                                  wstring specularFilename,
                                  wstring irradianceFilename,
@@ -448,8 +511,8 @@ void D3D11Renderer::InitCubemaps(wstring basePath, wstring envFilename,
 void D3D11Renderer::UpdateGlobalConstants(const float &dt,
                                           const Vector3 &eyeWorld,
                                           const Matrix &viewRow,
-                                          const Matrix &projRow)
-                                          //const Matrix &refl)
+                                          const Matrix &projRow,
+                                          const Matrix &refl)
 {
     globalConstsCPU.globalTime += dt;
     globalConstsCPU.eyeWorld = eyeWorld;
@@ -462,7 +525,19 @@ void D3D11Renderer::UpdateGlobalConstants(const float &dt,
     // 그림자 렌더링에 사용
     globalConstsCPU.invViewProj = globalConstsCPU.viewProj.Invert();
 
+    // 거울 반사 렌더링
+    reflectGlobalConstsCPU = globalConstsCPU;
+    memcpy(&reflectGlobalConstsCPU, &globalConstsCPU,
+           sizeof(globalConstsCPU));
+    reflectGlobalConstsCPU.view = (refl * viewRow).Transpose();
+    reflectGlobalConstsCPU.viewProj = (refl * viewRow * projRow).Transpose();
+    // 그림자 렌더링에 사용 (TODO: 광원의 위치도 반사시킨 후에 계산해야 함)
+    reflectGlobalConstsCPU.invViewProj =
+        reflectGlobalConstsCPU.viewProj.Invert();
+
+
     D3D11Utils::UpdateBuffer(context, globalConstsCPU, globalConstsGPU);
+    D3D11Utils::UpdateBuffer(context, reflectGlobalConstsCPU, reflectGlobalConstsGPU);
 }
 
 void D3D11Renderer::SetGlobalConsts(ComPtr<ID3D11Buffer> &globalConstsGPU)
@@ -491,17 +566,6 @@ void D3D11Renderer::SetPipelineState(const D3D11PSO &pso)
     context->OMSetDepthStencilState(pso.depthStencilState.Get(),
                                     pso.stencilRef);
     context->IASetPrimitiveTopology(pso.primitiveTopology);
-}
-
-void D3D11Renderer::Prepare()
-{ 
-    context->ClearRenderTargetView(backBufferRTV.Get(), clearColor);
-    context->ClearRenderTargetView(floatRTV.Get(), clearColor);
-    // https://learn.microsoft.com/ko-kr/windows/win32/api/d3dcommon/ne-d3dcommon-d3d_primitive_topology
-    context->ClearDepthStencilView(
-        defaultDSV.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-    context->OMSetRenderTargets(1, floatRTV.GetAddressOf(), defaultDSV.Get());
 }
 
 float D3D11Renderer::GetAspectRatio() const

@@ -19,5 +19,5 @@ void D3D11PSO::operator=(const D3D11PSO &pso)
 
 void D3D11PSO::SetBlendFactor(const float newBlendFactor[4])
 {
-    memcpy(blendFactor, blendFactor, sizeof(float) * 4);
+    memcpy(blendFactor, newBlendFactor, sizeof(float) * 4);
 }

@@ -51,7 +51,7 @@ protected:
     GUIManager guiManager;
 	HWND mainWindow;
 
-    Level level;
+    shared_ptr<Level> level;
 
 	Camera camera;
     Camera camera_debug; // 디버깅용 카메라 (ex. culling)

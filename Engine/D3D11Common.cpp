@@ -563,43 +563,43 @@ void Graphics::InitPipelineStates(ComPtr<ID3D11Device> &device)
     mipmapSolidPSO = defaultSolidPSO;
     mipmapSolidPSO.pixelShader = mipmapPS;
 
-    //// stencilMarkPSO;
-    //stencilMaskPSO = defaultSolidPSO;
-    //stencilMaskPSO.depthStencilState = maskDSS;
-    //stencilMaskPSO.stencilRef = 1;
-    //stencilMaskPSO.vertexShader = depthOnlyVS;
-    //stencilMaskPSO.pixelShader = depthOnlyPS;
+    // stencilMarkPSO;
+    stencilMaskPSO = defaultSolidPSO;
+    stencilMaskPSO.depthStencilState = maskDSS;
+    stencilMaskPSO.stencilRef = 1;
+    stencilMaskPSO.vertexShader = depthOnlyVS;
+    stencilMaskPSO.pixelShader = depthOnlyPS;
 
-    //// reflectSolidPSO: 반사되면 Winding 반대
-    //reflectSolidPSO = defaultSolidPSO;
-    //reflectSolidPSO.depthStencilState = drawMaskedDSS;
-    //reflectSolidPSO.rasterizerState = solidCcwRS; // 반시계
-    //reflectSolidPSO.stencilRef = 1;
+    // reflectSolidPSO: 반사되면 Winding 반대
+    reflectSolidPSO = defaultSolidPSO;
+    reflectSolidPSO.depthStencilState = drawMaskedDSS;
+    reflectSolidPSO.rasterizerState = solidCcwRS; // 반시계
+    reflectSolidPSO.stencilRef = 1;
 
     //reflectSkinnedSolidPSO = reflectSolidPSO;
     //reflectSkinnedSolidPSO.vertexShader = skinnedVS;
     //reflectSkinnedSolidPSO.inputLayout = skinnedIL;
 
-    //// reflectWirePSO: 반사되면 Winding 반대
-    //reflectWirePSO = reflectSolidPSO;
-    //reflectWirePSO.rasterizerState = wireCcwRS; // 반시계
-    //reflectWirePSO.stencilRef = 1;
+    // reflectWirePSO: 반사되면 Winding 반대
+    reflectWirePSO = reflectSolidPSO;
+    reflectWirePSO.rasterizerState = wireCcwRS; // 반시계
+    reflectWirePSO.stencilRef = 1;
 
     //reflectSkinnedWirePSO = reflectSkinnedSolidPSO;
     //reflectSkinnedWirePSO.rasterizerState = wireCcwRS; // 반시계
     //reflectSkinnedWirePSO.stencilRef = 1;
 
-    //// mirrorBlendSolidPSO;
-    //mirrorBlendSolidPSO = defaultSolidPSO;
-    //mirrorBlendSolidPSO. blendState = mirrorBS;
-    //mirrorBlendSolidPSO. depthStencilState = drawMaskedDSS;
-    //mirrorBlendSolidPSO. stencilRef = 1;
+    // mirrorBlendSolidPSO;
+    mirrorBlendSolidPSO = defaultSolidPSO;
+    mirrorBlendSolidPSO.blendState = mirrorBS;
+    mirrorBlendSolidPSO.depthStencilState = drawMaskedDSS;
+    mirrorBlendSolidPSO.stencilRef = 1;
 
-    //// mirrorBlendWirePSO;
-    //mirrorBlendWirePSO = defaultWirePSO;
-    //mirrorBlendWirePSO.blendState = mirrorBS;
-    //mirrorBlendWirePSO.depthStencilState = drawMaskedDSS;
-    //mirrorBlendWirePSO.stencilRef = 1;
+    // mirrorBlendWirePSO;
+    mirrorBlendWirePSO = defaultWirePSO;
+    mirrorBlendWirePSO.blendState = mirrorBS;
+    mirrorBlendWirePSO.depthStencilState = drawMaskedDSS;
+    mirrorBlendWirePSO.stencilRef = 1;
 
     // skyboxSolidPSO
     skyboxSolidPSO = defaultSolidPSO;
@@ -626,16 +626,16 @@ void Graphics::InitPipelineStates(ComPtr<ID3D11Device> &device)
     terrainWirePSO.rasterizerState = wireRS;
 
 
-    //// reflectSkyboxSolidPSO
-    //reflectSkyboxSolidPSO = skyboxSolidPSO;
-    //reflectSkyboxSolidPSO.depthStencilState = drawMaskedDSS;
-    //reflectSkyboxSolidPSO.rasterizerState = solidCcwRS; // 반시계
-    //reflectSkyboxSolidPSO.stencilRef = 1;
+    // reflectSkyboxSolidPSO
+    reflectSkyboxSolidPSO = skyboxSolidPSO;
+    reflectSkyboxSolidPSO.depthStencilState = drawMaskedDSS;
+    reflectSkyboxSolidPSO.rasterizerState = solidCcwRS; // 반시계
+    reflectSkyboxSolidPSO.stencilRef = 1;
 
-    //// reflectSkyboxWirePSO
-    //reflectSkyboxWirePSO = reflectSkyboxSolidPSO;
-    //reflectSkyboxWirePSO.rasterizerState = wireCcwRS;
-    //reflectSkyboxWirePSO.stencilRef = 1;
+    // reflectSkyboxWirePSO
+    reflectSkyboxWirePSO = reflectSkyboxSolidPSO;
+    reflectSkyboxWirePSO.rasterizerState = wireCcwRS;
+    reflectSkyboxWirePSO.stencilRef = 1;
 
     // normalsPSO
     normalsPSO = defaultSolidPSO;

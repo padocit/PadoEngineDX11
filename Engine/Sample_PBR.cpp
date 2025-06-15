@@ -29,7 +29,7 @@ bool Sample_PBR::InitLevel()
         skybox->name = "SkyBox";
         skybox->SetPSO(Graphics::skyboxWirePSO, Graphics::skyboxSolidPSO);
 
-        level.SetSkybox(skybox);
+        level->SetSkybox(skybox);
     }
 
     // Terrain (ground)
@@ -65,7 +65,7 @@ bool Sample_PBR::InitLevel()
 
         terrain->SetPSO(Graphics::terrainWirePSO, Graphics::terrainSolidPSO);
 
-        level.AddActor(terrain);
+        level->AddActor(terrain);
     }    
 
     // PBR Sphere <- UE PBR
@@ -96,33 +96,31 @@ bool Sample_PBR::InitLevel()
 
         sphere->SetPSO(Graphics::defaultWirePSO, Graphics::defaultSolidPSO);
 
-        level.AddActor(sphere);
+        level->AddActor(sphere);
     }
 
     // Character
-    {
-        string path = "../Assets/Characters/UEMannequin/";
-        auto meshes = GeometryGenerator::ReadFromFile(path, "MannequinBlenderASCII.fbx");        
+    //{
+    //    string path = "../Assets/Characters/UEMannequin/";
+    //    auto meshes = GeometryGenerator::ReadFromFile(path, "MannequinBlenderASCII.fbx");        
 
-        Vector3 center(0.0f, 0.0f, 2.0f);
-        character = make_shared<Actor>(renderer.GetDevice(),
-                                           renderer.GetContext(), meshes);
-        character->materialConsts.GetCpu().invertNormalMapY =
-            false; // GLTF는 true
-        character->materialConsts.GetCpu().albedoFactor = Vector3(1.0f);
-        character->materialConsts.GetCpu().roughnessFactor = 0.3f;
-        character->materialConsts.GetCpu().metallicFactor = 0.8f;
-        character->UpdateWorldRow(Matrix::CreateTranslation(center));
-        character->UpdateConstantBuffers(renderer.GetDevice(),
-                                      renderer.GetContext());
+    //    Vector3 center(0.0f, 0.0f, 2.0f);
+    //    character = make_shared<Actor>(renderer.GetDevice(),
+    //                                       renderer.GetContext(), meshes);
+    //    character->materialConsts.GetCpu().invertNormalMapY =
+    //        false; // GLTF는 true
+    //    character->materialConsts.GetCpu().albedoFactor = Vector3(1.0f);
+    //    character->UpdateWorldRow(Matrix::CreateTranslation(center));
+    //    character->UpdateConstantBuffers(renderer.GetDevice(),
+    //                                  renderer.GetContext());
 
-        character->isPickable = true; // 마우스로 선택/이동 가능
-        character->name = "character";
+    //    character->isPickable = true; // 마우스로 선택/이동 가능
+    //    character->name = "character";
 
-        character->SetPSO(Graphics::defaultWirePSO, Graphics::defaultSolidPSO);
+    //    character->SetPSO(Graphics::defaultWirePSO, Graphics::defaultSolidPSO);
 
-        level.AddActor(character);
-    }
+    //    level->AddActor(character);
+    //}
 
     // 3D Model
     {
@@ -130,14 +128,12 @@ bool Sample_PBR::InitLevel()
         auto meshes =
             GeometryGenerator::ReadFromFile(path, "DamagedHelmet.gltf");
 
-        Vector3 center(3.0f, 0.05f, 2.0f);
+        Vector3 center(0.0f, 0.05f, 2.0f);
         helmet = make_shared<Actor>(renderer.GetDevice(),
                                        renderer.GetContext(), meshes);
         helmet->materialConsts.GetCpu().invertNormalMapY =
             true; // GLTF는 true
         helmet->materialConsts.GetCpu().albedoFactor = Vector3(1.0f);
-        helmet->materialConsts.GetCpu().roughnessFactor = 0.3f;
-        helmet->materialConsts.GetCpu().metallicFactor = 0.8f;
         helmet->UpdateWorldRow(Matrix::CreateTranslation(center));
         helmet->UpdateConstantBuffers(renderer.GetDevice(),
                                          renderer.GetContext());
@@ -147,7 +143,7 @@ bool Sample_PBR::InitLevel()
 
         helmet->SetPSO(Graphics::defaultWirePSO, Graphics::defaultSolidPSO);
 
-        level.AddActor(helmet);
+        level->AddActor(helmet);
 
     }
 
