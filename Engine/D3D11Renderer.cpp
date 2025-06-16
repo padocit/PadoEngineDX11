@@ -542,6 +542,12 @@ void D3D11Renderer::UpdateGlobalConstants(const float &dt,
     D3D11Utils::UpdateBuffer(context, reflectGlobalConstsCPU, reflectGlobalConstsGPU);
 }
 
+void D3D11Renderer::UpdatePostEffectsConstants()
+{
+    D3D11Utils::UpdateBuffer(context, postEffectsConstsCPU,
+                             postEffectsConstsGPU);
+}
+
 void D3D11Renderer::SetGlobalConsts(ComPtr<ID3D11Buffer> &globalConstsGPU)
 {
     // 쉐이더와 일관성 유지 cbuffer GlobalConstants : register(b0)

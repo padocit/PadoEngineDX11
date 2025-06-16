@@ -234,6 +234,27 @@ void Engine::UpdateGUI()
     }
 
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    if (ImGui::TreeNode("Post Effects"))
+    {
+        int flag = 0;
+        flag += ImGui::RadioButton("Render", &renderer.postEffectsConstsCPU.mode, 1);
+        ImGui::SameLine();
+        flag +=
+            ImGui::RadioButton("Depth", &renderer.postEffectsConstsCPU.mode, 2);
+        flag += ImGui::SliderFloat(
+            "DepthScale", &renderer.postEffectsConstsCPU.depthScale, 0.0, 1.0);
+        flag += ImGui::SliderFloat(
+            "Fog", &renderer.postEffectsConstsCPU.fogStrength,
+                                   0.0, 10.0);
+
+        if (flag)
+            renderer.UpdatePostEffectsConstants();
+
+        ImGui::TreePop();
+    }
+
+
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode("Post Processing"))
     {
 
@@ -305,14 +326,14 @@ void Engine::OnMouseMove(int MouseX, int MouseY)
     // 마우스 커서는 좌측 상단 (0, 0), 우측 하단(width-1, height-1)
     // NDC는 좌측 하단이 (-1, -1), 우측 상단(1, 1)
     //mouseNdcX = mouseX * 2.0f / (resolution.width - guiManager.guiWidth) - 1.0f;
-    mouseNdcX = mouseX * 2.0f / resolution.width - 1.0f;
-    mouseNdcY = -mouseY * 2.0f / resolution.height + 1.0f;
+    mouseNdcX = MouseX * 2.0f / resolution.width - 1.0f;
+    mouseNdcY = -MouseY * 2.0f / resolution.height + 1.0f;
 
     // 커서가 화면 밖으로 나갔을 경우 범위 조절
     // 게임에서는 클램프를 안할 수도 있습니다.
     mouseNdcX = std::clamp(mouseNdcX, -1.0f, 1.0f);
     mouseNdcY = std::clamp(mouseNdcY, -1.0f, 1.0f);
-
+     
     // 카메라 시점 회전
     camera.UpdateMouse(mouseNdcX, mouseNdcY);
 }
@@ -323,8 +344,8 @@ void Engine::OnMouseClick(int MouseX, int MouseY)
     mouseY = MouseY;
 
     //mouseNdcX = mouseX * 2.0f / (resolution.width - guiManager.guiWidth) - 1.0f;
-    mouseNdcX = mouseX * 2.0f / resolution.width - 1.0f;
-    mouseNdcY = -mouseY * 2.0f / resolution.height + 1.0f;
+    mouseNdcX = MouseX * 2.0f / resolution.width - 1.0f;
+    mouseNdcY = -MouseY * 2.0f / resolution.height + 1.0f;
 }
 
 LRESULT Engine::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -423,7 +444,7 @@ LRESULT Engine::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 shared_ptr<Actor> Engine::PickClosest(const Ray &pickingRay, float &minDist)
 {
     minDist = 1e5f;
-    shared_ptr<Actor> minModel = nullptr;
+    shared_ptr<Actor> minActor = nullptr;
     for (auto &actor : level->actors)
     {
         float dist = 0.0f;
@@ -431,11 +452,11 @@ shared_ptr<Actor> Engine::PickClosest(const Ray &pickingRay, float &minDist)
             pickingRay.Intersects(actor->boundingSphere, dist) &&
             dist < minDist)
         {
-            minModel = actor;
+            minActor = actor;
             minDist = dist;
         }
     }
-    return minModel;
+    return minActor;
 }
 
 void Engine::ProcessMouseControl()

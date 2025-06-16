@@ -107,16 +107,16 @@ float4 main(SamplingPixelShaderInput input) : SV_TARGET
         //float radius = lights[1].haloRadius;
         //color += HaloEmission(posView.xyz, radius) * haloColor * lights[1].haloStrength;
 
-        //// Fog
-        //// TODO: 사용안하면 Off 하도록 확장
-        //float dist = length(posView.xyz); // 눈의 위치가 원점인 좌표계
-        //float3 fogColor = float3(1, 1, 1);
-        //float fogMin = 1.0;
-        //float fogMax = 10.0;
-        //float distFog = saturate((dist - fogMin) / (fogMax - fogMin));
-        //float fogFactor = exp(-distFog * fogStrength);
+        // Fog
+        // TODO: 사용안하면 Off 하도록 확장
+        float dist = length(posView.xyz); // 눈의 위치가 원점인 좌표계
+        float3 fogColor = float3(1, 1, 1);
+        float fogMin = 1.0;
+        float fogMax = 10.0;
+        float distFog = saturate((dist - fogMin) / (fogMax - fogMin));
+        float fogFactor = exp(-distFog * fogStrength);
 
-        //color = lerp(fogColor, color, fogFactor);
+        color = lerp(fogColor, color, fogFactor);
         
         return float4(color, 1.0);
     }

@@ -20,7 +20,7 @@ bool Sample_Basic::InitLevel()
                               L"IndoorEnvHDR.dds", L"IndoorSpecularHDR.dds",
                               L"IndoorDiffuseHDR.dds", L"IndoorBrdf.dds");
     }
-
+     
     // Mirror ground
     {
         // MeshData terrainData =

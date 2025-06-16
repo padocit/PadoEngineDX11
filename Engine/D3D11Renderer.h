@@ -73,6 +73,7 @@ public:
     void UpdateGlobalConstants(const float &dt, const Vector3 &eyeWorld,
                                const Matrix &viewRow, const Matrix &projRow,
                                const Matrix &refl = Matrix());
+    void UpdatePostEffectsConstants();
     void SetGlobalConsts(ComPtr<ID3D11Buffer> &globalConstsGPU);
 
     void SetPipelineState(const D3D11PSO &pso);
