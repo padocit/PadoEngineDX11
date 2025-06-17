@@ -316,6 +316,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />
+    <None Include="DiskSamples.hlsli" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

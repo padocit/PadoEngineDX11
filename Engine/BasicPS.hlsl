@@ -2,6 +2,7 @@
 // 참고자료: https://github.com/Nadrin/PBR/blob/master/data/shaders/hlsl/pbr.hlsl
 
 #include "Common.hlsli"
+#include "DiskSamples.hlsli"
 
 // 메쉬 재질 텍스춰들 t0 부터 시작
 Texture2D albedoTex : register(t0);
@@ -98,6 +99,19 @@ float SchlickGGX(float NdotI, float NdotO, float roughness)
     return SchlickG1(NdotI, k) * SchlickG1(NdotO, k);
 }
 
+float PCF_Filter(float2 uv, float zReceiverNdc, float filterRadiusUV, Texture2D shadowMap)
+{
+    float sum = 0.0f;
+    for (int i = 0; i < 64; ++i)
+    {
+        float2 offset = diskSamples64[i] * filterRadiusUV;
+        sum += shadowMap.SampleCmpLevelZero(
+            shadowCompareSampler, uv + offset, zReceiverNdc);
+    }
+    return sum / 64;
+}
+
+
 float3 LightRadiance(Light light, float3 posWorld, float3 normalWorld, Texture2D shadowMap)
 {
     // Directional light
@@ -134,17 +148,26 @@ float3 LightRadiance(Light light, float3 posWorld, float3 normalWorld, Texture2D
         lightTexcoord += 1.0;
         lightTexcoord *= 0.5;
         
-        //// 3. 쉐도우맵에서 값 가져오기
+        // 3. 쉐도우맵에서 값 가져오기
         //float depth = shadowMap.Sample(shadowPointSampler, lightTexcoord).r;
         
-        //// 4. 가려져 있다면 그림자로 표시
+        // 4. 가려져 있다면 그림자로 표시
         //if (depth + 0.001 < lightScreen.z) // Shadow acne 방지용 작은 bias (값은 실험으로 찾기)
         //    shadowFactor = 0.0;
         
-        // (1) SampleCmp = 2x2 샘플링 후 비교한 결과값 0,1 Interpolation => [0..1] float
-        shadowFactor = shadowMap.SampleCmpLevelZero(
-            shadowCompareSampler, lightTexcoord.xy, lightScreen.z - 0.001
-        ).r; // LevelZero = LOD 레벨 0
+        // (1) SampleCmp
+        // 2x2 샘플링 후 비교한 결과값 0,1 Interpolation => [0..1] float
+        //shadowFactor = shadowMap.SampleCmpLevelZero(
+        //    shadowCompareSampler, lightTexcoord.xy, lightScreen.z - 0.001
+        //).r; // LevelZero = LOD 레벨 0
+        
+        // (2) PCF (64 random samples)
+        uint width, height, numMips;
+        shadowMap.GetDimensions(0, width, height, numMips);
+        float dx = 5.0 / (float) width;
+        shadowFactor = PCF_Filter(lightTexcoord.xy, lightScreen.z - 0.001, dx, shadowMap);
+
+        // (3) PCSS
     }
 
     float3 radiance = light.radiance * spotFator * att * shadowFactor; // shadowFactor: 1 or 0

@@ -13,7 +13,7 @@ bool Sample_Basic::InitLevel()
 {
     Engine::camera.Reset(Vector3(0.0f, 0.5f, -1.0f), 0.0f, 0.0f);
     Engine::InitLevel();
-     
+
     // Cubemap 
     {
         renderer.InitCubemaps(L"../Assets/Textures/Cubemaps/HDRI/",

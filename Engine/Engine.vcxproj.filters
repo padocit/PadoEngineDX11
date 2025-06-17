@@ -194,5 +194,8 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="packages.config" />
+    <None Include="DiskSamples.hlsli">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
