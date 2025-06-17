@@ -5,6 +5,7 @@
 #include "Actor.h"
 
 using namespace std;
+using namespace DirectX;
 
 bool D3D11Renderer::Initialize(const Resolution &resolution, HWND hWnd)
 {
@@ -30,11 +31,11 @@ bool D3D11Renderer::Initialize(const Resolution &resolution, HWND hWnd)
                                   reflectGlobalConstsGPU);
 
     // 그림자맵 렌더링할 때 사용할 GlobalConsts들 별도 생성
-    //for (int i = 0; i < MAX_LIGHTS; i++)
-    //{
-    //    D3D11Utils::CreateConstBuffer(device, shadowGlobalConstsCPU[i],
-    //                                  shadowGlobalConstsGPU[i]);
-    //}
+    for (int i = 0; i < MAX_LIGHTS; i++)
+    {
+        D3D11Utils::CreateConstBuffer(device, shadowGlobalConstsCPU[i],
+                                      shadowGlobalConstsGPU[i]);
+    }
 
     // 후처리 효과용 ConstBuffer
     D3D11Utils::CreateConstBuffer(device, postEffectsConstsCPU,
@@ -54,7 +55,7 @@ void D3D11Renderer::Update(Camera* camera, float dt)
     const Matrix viewRow = camera->GetViewRow();
     const Matrix projRow = camera->GetProjRow();
 
-    // UpdateLights(dt);
+    UpdateLights(dt);
 
     // 공용 cbuffer 업데이트
     UpdateGlobalConstants(dt, eyeWorld, viewRow, projRow, reflectRow);
@@ -77,6 +78,73 @@ void D3D11Renderer::Update(Camera* camera, float dt)
     if (postEffectsFlag)
         D3D11Utils::UpdateBuffer(context, postEffectsConstsCPU,
                                  postEffectsConstsGPU);
+}
+
+void D3D11Renderer::UpdateLights(float dt)
+{
+    // 회전하는 lights[1] 업데이트
+    static Vector3 lightDev = Vector3(1.0f, 0.0f, 0.0f);
+    if (lightRotate)
+    {
+        lightDev = Vector3::Transform(
+            lightDev, Matrix::CreateRotationY(dt * 3.141592f * 0.5f));
+    }
+    globalConstsCPU.lights[1].position = Vector3(0.0f, 1.1f, 2.0f) + lightDev;
+    Vector3 focusPosition = Vector3(0.0f, -0.5f, 1.7f);
+    globalConstsCPU.lights[1].direction =
+        focusPosition - globalConstsCPU.lights[1].position;
+    globalConstsCPU.lights[1].direction.Normalize();
+
+    // 그림자맵을 만들기 위한 시점
+    for (int i = 0; i < MAX_LIGHTS; i++)
+    {
+        const auto &light = globalConstsCPU.lights[i];
+        if (light.type & LIGHT_SHADOW)
+        {
+            Vector3 up = Vector3(0.0f, 1.0f, 0.0f);
+            if (abs(up.Dot(light.direction) + 1.0f) < 1e-5)
+                up = Vector3(1.0f, 0.0f, 0.0f);
+
+            // 그림자맵을 만들 때 필요
+            Matrix lightViewRow = XMMatrixLookAtLH(
+                light.position, light.position + light.direction, up);
+
+            Matrix lightProjRow = XMMatrixPerspectiveFovLH(
+                XMConvertToRadians(120.0f), 1.0f, 0.1f, 10.0f);
+
+            shadowGlobalConstsCPU[i].eyeWorld = light.position;
+            shadowGlobalConstsCPU[i].view = lightViewRow.Transpose();
+            shadowGlobalConstsCPU[i].proj = lightProjRow.Transpose();
+            shadowGlobalConstsCPU[i].invProj =
+                lightProjRow.Invert().Transpose();
+            shadowGlobalConstsCPU[i].viewProj =
+                (lightViewRow * lightProjRow).Transpose();
+
+            // LIGHT_FRUSTUM_WIDTH 확인
+            // Vector4 eye(0.0f, 0.0f, 0.0f, 1.0f);
+            // Vector4 xLeft(-1.0f, -1.0f, 0.0f, 1.0f);
+            // Vector4 xRight(1.0f, 1.0f, 0.0f, 1.0f);
+            // eye = Vector4::Transform(eye, lightProjRow);
+            // xLeft = Vector4::Transform(xLeft, lightProjRow.Invert());
+            // xRight = Vector4::Transform(xRight, lightProjRow.Invert());
+            // xLeft /= xLeft.w;
+            // xRight /= xRight.w;
+            // cout << "LIGHT_FRUSTUM_WIDTH = " << xRight.x - xLeft.x <<
+            // endl;
+
+            D3D11Utils::UpdateBuffer(context, shadowGlobalConstsCPU[i],
+                                     shadowGlobalConstsGPU[i]);
+
+            // 그림자를 실제로 렌더링할 때 필요
+            globalConstsCPU.lights[i].viewProj =
+                shadowGlobalConstsCPU[i].viewProj;
+            globalConstsCPU.lights[i].invProj =
+                shadowGlobalConstsCPU[i].invProj;
+
+            // 반사된 장면에서도 그림자를 그리고 싶다면 조명도 반사시켜서
+            // 넣어주면 됩니다.
+        }
+    }
 }
 
 bool D3D11Renderer::InitDeviceAndSwapChain(HWND hWnd)
@@ -321,6 +389,21 @@ void D3D11Renderer::SetMainViewportNoGUIWidth()
     context->RSSetViewports(1, &screenViewport);
 }
 
+void D3D11Renderer::SetShadowViewport()
+{
+    // Set the viewport
+    D3D11_VIEWPORT shadowViewport;
+    ZeroMemory(&shadowViewport, sizeof(D3D11_VIEWPORT));
+    shadowViewport.TopLeftX = 0;
+    shadowViewport.TopLeftY = 0;
+    shadowViewport.Width = float(shadowWidth);
+    shadowViewport.Height = float(shadowHeight);
+    shadowViewport.MinDepth = 0.0f;
+    shadowViewport.MaxDepth = 1.0f;
+
+    context->RSSetViewports(1, &shadowViewport); // @refactor: PSO에 포함시킬 수도 있음
+}
+
 void D3D11Renderer::SetScreenSize(UINT width, UINT height)
 {
     backBufferRTV.Reset();
@@ -377,6 +460,39 @@ void D3D11Renderer::RenderDepthOnly()
     currentLevel->RenderDepthOnly(context);
 }
 
+void D3D11Renderer::RenderShadowMaps()
+{
+    // 쉐도우 맵을 다른 쉐이더에서 SRV 해제
+    ID3D11ShaderResourceView *nulls[2] = {0, 0};
+    context->PSSetShaderResources(15, 2, nulls);
+
+    // 그림자맵 해상도
+    SetShadowViewport(); 
+    for (int i = 0; i < MAX_LIGHTS; i++)
+    {
+        if (globalConstsCPU.lights[i].type & LIGHT_SHADOW)
+        {
+            context->OMSetRenderTargets(0, NULL, // DepthOnly라서 RTV 불필요
+                                          shadowDSVs[i].Get());
+            context->ClearDepthStencilView(shadowDSVs[i].Get(),
+                                             D3D11_CLEAR_DEPTH, 1.0f, 0);
+            SetGlobalConsts(shadowGlobalConstsGPU[i]);
+
+            for (const auto &actor : currentLevel->actors)
+            {
+                if (actor->castShadow && actor->isVisible)
+                {
+                    SetPipelineState(actor->GetDepthOnlyPSO());
+                    actor->Render(context);
+                }
+            }
+
+            if (currentLevel->mirror && currentLevel->mirror->castShadow)
+                currentLevel->mirror->Render(context);
+        }
+    }
+}
+
 void D3D11Renderer::RenderOpaqueObjects()
 {
     // 다시 렌더링 해상도로 되돌리기
@@ -387,11 +503,21 @@ void D3D11Renderer::RenderOpaqueObjects()
     context->ClearRenderTargetView(floatRTV.Get(), clearColor);
     context->OMSetRenderTargets(1, floatRTV.GetAddressOf(), defaultDSV.Get());
 
+    // 그림자맵들도 공용 텍스춰들 뒤에 추가
+    // 주의: 마지막 shadowDSV를 RenderTarget에서 해제한 후 설정
+    vector<ID3D11ShaderResourceView *> newShadowSRVs;
+    for (int i = 0; i < MAX_LIGHTS; i++)
+    {
+        newShadowSRVs.push_back(shadowSRVs[i].Get());
+    }
+    context->PSSetShaderResources(15, UINT(newShadowSRVs.size()),
+                                    newShadowSRVs.data());
+
     context->ClearDepthStencilView(
         defaultDSV.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
     SetGlobalConsts(globalConstsGPU);
 
-    // Draw
+    // Draw (skybox, actors, mirror, normal)
     currentLevel->Render(context, drawAsWire);
 }
 
@@ -432,6 +558,7 @@ void D3D11Renderer::Render()
     RenderBegin();
 
     RenderDepthOnly();
+    RenderShadowMaps();
     RenderOpaqueObjects();
     RenderMirror();
 
@@ -460,6 +587,12 @@ void D3D11Renderer::PostRender()
     D3D11Renderer::SetGlobalConsts(globalConstsGPU);
     vector<ID3D11ShaderResourceView *> postEffectsSRVs = {
         resolvedSRV.Get(), depthOnlySRV.Get()};
+
+    // Shadow Map 확인용 (임시)
+    //D3D11Renderer::SetGlobalConsts(shadowGlobalConstsGPU[1]);
+    //vector<ID3D11ShaderResourceView *> postEffectsSRVs = {resolvedSRV.Get(),
+    //                                                      shadowSRVs[1].Get()};
+
     context->PSSetShaderResources(20, // 주의: Startslot 20
                                     UINT(postEffectsSRVs.size()),
                                     postEffectsSRVs.data());

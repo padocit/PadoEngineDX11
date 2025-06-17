@@ -128,17 +128,30 @@ bool Engine::InitLevel()
     level->SetSkybox(skybox);
 
     // 조명 설정
-    {
+    {  
         auto &gConsts = renderer.globalConstsCPU;
-        // point light
+
+        // 조명 0
+        // @issue: direction이 없는 point light 사용 시 문제점
+        // 광원 기준 viewFrustum(FOV) 경계에서 그림자가 뚝 잘림
+        // 현재 spot light -> 경계를 spotPower로 가려버리는 중임
         gConsts.lights[0].radiance = Vector3(5.0f);
         gConsts.lights[0].position = Vector3(0.0f, 1.5f, 1.1f);
+        gConsts.lights[0].direction = Vector3(0.0f, -1.0f, 0.0f);
+        gConsts.lights[0].spotPower = 6.0f;
         gConsts.lights[0].radius = 0.04f;
         gConsts.lights[0].type =
-            LIGHT_POINT | LIGHT_SHADOW; // Point with shadow
+            LIGHT_SPOT | LIGHT_SHADOW; // Point with shadow
+
+        // 조명 1의 위치와 방향은 Update()에서 설정
+        gConsts.lights[1].radiance = Vector3(5.0f);
+        gConsts.lights[1].spotPower = 3.0f;
+        gConsts.lights[1].fallOffEnd = 20.0f;
+        gConsts.lights[1].radius = 0.02f;
+        gConsts.lights[1].type =
+            LIGHT_SPOT | LIGHT_SHADOW; // Point with shadow
 
         // off
-        gConsts.lights[1].type = LIGHT_OFF;
         gConsts.lights[2].type = LIGHT_OFF;
     }
 
@@ -301,7 +314,8 @@ void Engine::UpdateGUI()
         ImGui::SliderFloat("Radius", &renderer.globalConstsCPU.lights[0].radius,
                            0.0f,
                            0.5f);
-        ImGui::Checkbox("Debug Sphere", &renderer.lightSphere[0]->isVisible);
+        ImGui::Checkbox("light0 Sphere", &renderer.lightSphere[0]->isVisible);
+        ImGui::Checkbox("light1 Sphere", &renderer.lightSphere[1]->isVisible);
         ImGui::TreePop();
     }
 }
@@ -411,6 +425,10 @@ LRESULT Engine::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         if (wParam == VK_ESCAPE) // ESC키 종료
         {
             DestroyWindow(hwnd);
+        }
+        if (wParam == VK_SPACE)
+        {
+            renderer.lightRotate = !renderer.lightRotate;
         }
         break;
     case WM_KEYUP:

@@ -23,10 +23,10 @@ public:
 
 	// Update & Render
     void Update(Camera* camera, float dt);
-    //virtual void UpdateLights(float dt);
+    virtual void UpdateLights(float dt);
     void RenderBegin();
     virtual void RenderDepthOnly();
-    //virtual void RenderShadowMaps();
+    virtual void RenderShadowMaps();
     virtual void RenderOpaqueObjects();
     virtual void RenderMirror();
     void Render();
@@ -41,6 +41,7 @@ public:
     void SetResolution(const Resolution &resolution);
     void SetMainViewport();
     void SetMainViewportNoGUIWidth();
+    void SetShadowViewport();
     float GetAspectRatio() const;
     void SetScreenSize(UINT width, UINT height);
 
@@ -87,12 +88,14 @@ public:
     // GUI 연동
     GlobalConstants globalConstsCPU;
     GlobalConstants reflectGlobalConstsCPU;
+    PostEffectsConstants postEffectsConstsCPU;
+    GlobalConstants shadowGlobalConstsCPU[MAX_LIGHTS];
     int guiWidth = 0;
     bool drawAsWire = false;
+    bool useMSAA = true;
     int postProcessFlag = 0;
     int postEffectsFlag = 0;
-    PostEffectsConstants postEffectsConstsCPU;
-    bool useMSAA = true;
+    bool lightRotate = false;
 
     // Render(FP, HDR) -> PostEffects -> PostProcess
     PostProcess postProcess;
@@ -116,7 +119,6 @@ private:
     ComPtr<ID3D11ShaderResourceView> irradianceSRV;
     ComPtr<ID3D11ShaderResourceView> specularSRV;
     ComPtr<ID3D11ShaderResourceView> brdfSRV;
-
 
 	// Backbuffer
     // HDR Rendering Pipeline => SwapChain = SDR(UNORM) 사용
@@ -142,6 +144,8 @@ private:
     ComPtr<ID3D11ShaderResourceView> depthOnlySRV;
 
     // Shadow maps
+    // 최종 출력 화면 해상도와 같을 필요는 없음 (일반적인 텍스쳐 형태인 1:1로 임의 설정)
+    // 그러나 Shadow DSV에 기록 전에 Viewport 사이즈를 맞춰줘야함
     int shadowWidth = 1280;
     int shadowHeight = 1280;
     ComPtr<ID3D11Texture2D> shadowBuffers[MAX_LIGHTS]; // No MSAA
@@ -162,5 +166,6 @@ private:
     ComPtr<ID3D11Buffer> globalConstsGPU;
     ComPtr<ID3D11Buffer> postEffectsConstsGPU;
     ComPtr<ID3D11Buffer> reflectGlobalConstsGPU;
+    ComPtr<ID3D11Buffer> shadowGlobalConstsGPU[MAX_LIGHTS];
 };
 
