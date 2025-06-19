@@ -44,7 +44,7 @@ int RaySphereIntersection(in float3 start, in float3 dir, in float3 center, in f
     float r2 = radius * radius;
     float m = pdotv * pdotv - (p2 - r2);
     
-    if (m < 0.0)
+    if (m < 0.0 || pdotv > 0.0) // halo가 카메라 뒷편에서 동시에 보이는 상황 배제
     {
         t1 = 0;
         t2 = 0;
@@ -70,9 +70,10 @@ float HaloEmission(float3 posView, float radius)
 
     float t1 = 0.0;
     float t2 = 0.0;
-    if (RaySphereIntersection(rayStart, dir, center, radius, t1, t2) && t1 < posView.z)
+    float depth = length(posView);
+    if (RaySphereIntersection(rayStart, dir, center, radius, t1, t2) && t1 < depth)
     {
-        t2 = min(posView.z, t2);
+        t2 = min(depth, t2);
             
         float p2 = dot(rayStart - center, rayStart - center);
         float pdotv = dot(rayStart - center, dir);
@@ -81,10 +82,11 @@ float HaloEmission(float3 posView, float radius)
         float haloEmission = (1 - p2 * invr2) * (t2 - t1)
                           - pdotv * invr2 * (t2 * t2 - t1 * t1)
                           - 1.0 / (3.0 * r2) * (t2 * t2 * t2 - t1 * t1 * t1);
-            
-        haloEmission /= (4 * radius / 3.0);
+        
+        // normalize
+        haloEmission /= (4 * radius / 3.0); // 빛에너지max = 중심을 지나는 경우 = 4r/3
 
-        return haloEmission;
+        return haloEmission; // [0, 1]
     }
     else
     {
@@ -100,12 +102,14 @@ float4 main(SamplingPixelShaderInput input) : SV_TARGET
         
         float4 posView = TexcoordToView(input.texcoord);
 
-        //// Halo
-        //// TODO: 사용안하거나 Light 없으면 Off 하도록 확장 (radius = 0 => r2 = 0 => invr2 = INF => HaloEmission = NaN => color = NaN)
-        //// 또는 수치보정해서 NaN 안나오게!
-        //float3 haloColor = float3(0.96, 0.94, 0.82);
-        //float radius = lights[1].haloRadius;
-        //color += HaloEmission(posView.xyz, radius) * haloColor * lights[1].haloStrength;
+        // Halo
+        // TODO: 사용안하거나 Light 없으면 Off 하도록 확장 (radius = 0 => r2 = 0 => invr2 = INF => HaloEmission = NaN => color = NaN)
+        // 또는 수치보정해서 NaN 안나오게!
+        float3 haloColor = float3(0.96, 0.94, 0.82);
+        float radius = lights[1].haloRadius;
+        color += radius > 0.001 ?
+            HaloEmission(posView.xyz, radius) * haloColor * lights[1].haloStrength 
+            : 0.0;
 
         // Fog
         // TODO: 사용안하면 Off 하도록 확장

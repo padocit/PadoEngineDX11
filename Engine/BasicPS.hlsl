@@ -124,6 +124,14 @@ float N2V(float ndcDepth, matrix invProj)
     return pointView.z / pointView.w;
 }
 
+// N2V 최적화 버전 (point 전체 역변환 대신 g(z) -> z)
+//float NdcDepthToViewDepth(float z_ndc)
+//{
+//    // z_ndc = A + B/viewZ, where gProj[2,2]=A and gProj[3,2]=B.
+//    float viewZ = gProj[3][2] / (z_ndc - gProj[2][2]);
+//    return viewZ;
+//}
+
 void FindBlocker(out float avgBlockerDepthView, out float numBlockers, float2 uv,
                  float zReceiverView, Texture2D shadowMap, matrix invProj, float lightRadiusWorld)
 {
@@ -138,7 +146,7 @@ void FindBlocker(out float avgBlockerDepthView, out float numBlockers, float2 uv
         float shadowMapDepth =
             shadowMap.SampleLevel(shadowPointSampler, float2(uv + diskSamples64[i] * searchRadius), 0).r;
 
-        shadowMapDepth = N2V(shadowMapDepth, invProj);
+        shadowMapDepth = N2V(shadowMapDepth, invProj); // avg를 구하기 위해 linear한 형태로 변환
         
         if (shadowMapDepth < zReceiverView)
         {
@@ -169,8 +177,8 @@ float PCSS(float2 uv, float zReceiverNdc, Texture2D shadowMap, matrix invProj, f
     else
     {
         // STEP 2: penumbra size
-        float penumbraRatio = (zReceiverView - avgBlockerDepthView) / avgBlockerDepthView;
-        float filterRadiusUV = penumbraRatio * lightRadiusUV * NEAR_PLANE / zReceiverView;
+        float penumbraRatio = (zReceiverView - avgBlockerDepthView) / avgBlockerDepthView; // 거리에 비례
+        float filterRadiusUV = penumbraRatio * lightRadiusUV * NEAR_PLANE / zReceiverView; // 광원 면적에 비례 & 비례식
 
         // STEP 3: filtering
         return PCF_Filter(uv, zReceiverNdc, filterRadiusUV, shadowMap);

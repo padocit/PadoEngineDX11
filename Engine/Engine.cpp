@@ -306,7 +306,7 @@ void Engine::UpdateGUI()
     //}
 
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::TreeNode("Light1"))
+    if (ImGui::TreeNode("Light0"))
     {
         ImGui::SliderFloat3("Position",
                             &renderer.globalConstsCPU.lights[0].position.x,
@@ -319,11 +319,17 @@ void Engine::UpdateGUI()
     }
 
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::TreeNode("Light2"))
+    if (ImGui::TreeNode("Light1"))
     {
         ImGui::SliderFloat("Radius", &renderer.globalConstsCPU.lights[1].radius,
                            0.0f,
                            0.5f);
+        ImGui::SliderFloat("Halo Radius", &renderer.globalConstsCPU.lights[1].haloRadius,
+                           0.0f,
+                           10.0f);
+        ImGui::SliderFloat("Halo Strength", &renderer.globalConstsCPU.lights[1].haloStrength,
+                           0.0f,
+                           1.0f);
         ImGui::Checkbox("light1 Sphere", &renderer.lightSphere[1]->isVisible);
         ImGui::TreePop();
     }
