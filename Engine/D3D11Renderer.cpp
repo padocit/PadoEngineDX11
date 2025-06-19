@@ -120,7 +120,7 @@ void D3D11Renderer::UpdateLights(float dt)
             shadowGlobalConstsCPU[i].viewProj =
                 (lightViewRow * lightProjRow).Transpose();
 
-            // LIGHT_FRUSTUM_WIDTH 확인
+            // BasicPS <- LIGHT_FRUSTUM_WIDTH 값 확인 (invProj)
             // Vector4 eye(0.0f, 0.0f, 0.0f, 1.0f);
             // Vector4 xLeft(-1.0f, -1.0f, 0.0f, 1.0f);
             // Vector4 xRight(1.0f, 1.0f, 0.0f, 1.0f);
