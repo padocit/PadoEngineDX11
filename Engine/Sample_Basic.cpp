@@ -180,7 +180,7 @@ void Sample_Basic::UpdateGUI()
 
     //    ImGui::TreePop();
     //}
-     
+      
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode("Mirror"))
     {

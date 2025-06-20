@@ -168,7 +168,7 @@ bool D3D11Renderer::InitDeviceAndSwapChain(HWND hWnd)
     sd.BufferDesc.Height = screenHeight;
     sd.BufferDesc.Format = backBufferFormat;
     sd.BufferCount = 2;
-    sd.BufferDesc.RefreshRate.Numerator = 60;
+    sd.BufferDesc.RefreshRate.Numerator = 144;
     sd.BufferDesc.RefreshRate.Denominator = 1;
     sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT |
                      DXGI_USAGE_UNORDERED_ACCESS; // Compute Shader

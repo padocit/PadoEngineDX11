@@ -185,12 +185,12 @@ float PCSS(float2 uv, float zReceiverNdc, Texture2D shadowMap, matrix invProj, f
     }
 }
 
-float3 LightRadiance(Light light, float3 posWorld, float3 normalWorld, Texture2D shadowMap)
+float3 LightRadiance(Light light, float3 representativePoint, float3 posWorld, float3 normalWorld, Texture2D shadowMap)
 {
     // Directional light
     float3 lightVec = light.type & LIGHT_DIRECTIONAL
                       ? -light.direction
-                      : light.position - posWorld;
+                      : representativePoint - posWorld; //: light.position - posWorld;
 
     float lightDist = length(lightVec);
     lightVec /= lightDist;
@@ -241,7 +241,7 @@ float3 LightRadiance(Light light, float3 posWorld, float3 normalWorld, Texture2D
         //shadowFactor = PCF_Filter(lightTexcoord.xy, lightScreen.z - 0.001, dx, shadowMap);
 
         // (3) PCSS
-        float radiusScale = 0.5; // 광원의 반지름을 키웠을 때 깨지는 것 방지
+        float radiusScale = 0.5; // Sphere light 반지름을 키웠을 때 깨지는 것 방지
         shadowFactor = PCSS(lightTexcoord, lightScreen.z - 0.001, shadowMap, light.invProj, light.radius * radiusScale);
     }
 
@@ -284,7 +284,14 @@ PixelShaderOutput main(PixelShaderInput input)
     {
         if (lights[i].type)
         {
-            float3 lightVec = lights[i].position - input.posWorld;
+            // Sphere light
+            float3 L = lights[i].position - input.posWorld;
+            float3 r = normalize(reflect(eyeWorld - input.posWorld, normalWorld));
+            float3 centerToRay = dot(L, r) * r - L;
+            float3 representativePoint = L + centerToRay * clamp(lights[i].radius / length(centerToRay), 0.0, 1.0);
+            representativePoint += input.posWorld;
+            float3 lightVec = representativePoint - input.posWorld;
+
             float lightDist = length(lightVec);
             lightVec /= lightDist;
             
@@ -303,8 +310,7 @@ PixelShaderOutput main(PixelShaderInput input)
             float3 G = SchlickGGX(NdotI, NdotO, roughness);
             float3 specularBRDF = (F * D * G) / max(1e-5, 4.0 * NdotI * NdotO); // ZeroDivision 방지
 
-            float3 radiance = 0.0f;
-            radiance = LightRadiance(lights[i], input.posWorld, normalWorld, shadowMaps[i]);
+            float3 radiance = LightRadiance(lights[i], representativePoint, input.posWorld, normalWorld, shadowMaps[i]);
 
             // (편법)
             /*if (i == 0)
@@ -314,7 +320,9 @@ PixelShaderOutput main(PixelShaderInput input)
             if (i == 2)
                 radiance = LightRadiance(lights[i], input.posWorld, normalWorld, shadowMap2);*/
 
-            directLighting += (diffuseBRDF + specularBRDF) * radiance * NdotI;
+            //@refactor: 오류 임시 수정 (radiance가 (0,0,0)일 경우  directLighting += ... 인데도 0 벡터가 되어버림
+            if (abs(dot(float3(1, 1, 1), radiance)) > 1e-5)
+                directLighting += (diffuseBRDF + specularBRDF) * radiance * NdotI;
         }
     }
     
