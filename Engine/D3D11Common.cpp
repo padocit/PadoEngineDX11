@@ -100,8 +100,8 @@ D3D11PSO mirrorBlendSolidPSO;
 D3D11PSO mirrorBlendWirePSO;
 D3D11PSO skyboxSolidPSO;
 D3D11PSO skyboxWirePSO;
-D3D11PSO terrainSolidPSO;
-D3D11PSO terrainWirePSO;
+D3D11PSO terrainSolidPSO; // PS <- basicPS
+D3D11PSO terrainWirePSO; // PS <- basicPS
 D3D11PSO reflectSkyboxSolidPSO;
 D3D11PSO reflectSkyboxWirePSO;
 D3D11PSO normalsPSO;
@@ -616,7 +616,7 @@ void Graphics::InitPipelineStates(ComPtr<ID3D11Device> &device)
     terrainSolidPSO.inputLayout = terrainIL;
     terrainSolidPSO.hullShader = terrainHS;
     terrainSolidPSO.domainShader = terrainDS;
-    terrainSolidPSO.pixelShader = terrainPS;
+    terrainSolidPSO.pixelShader = basicPS;
     terrainSolidPSO.rasterizerState = solidRS;
     terrainSolidPSO.primitiveTopology =
         D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST; // TODO: 필요에 따라 변경

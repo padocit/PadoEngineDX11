@@ -1,30 +1,31 @@
 #include "Actor.h"
 #include "GeometryGenerator.h"
-#include "Sample_Basic.h"
+#include "Sample_Night.h"
 #include "TerrainActor.h"
 
 using namespace std;
 
-Sample_Basic::Sample_Basic() : Engine()
+Sample_Night::Sample_Night() : Engine()
 {
 }
 
-bool Sample_Basic::InitLevel()
+bool Sample_Night::InitLevel()
 {
     Engine::camera.Reset(Vector3(0.0f, 0.5f, -1.0f), 0.0f, 0.0f);
     Engine::InitLevel();
 
-    // Cubemap 
+    // Cubemap
     {
         renderer.InitCubemaps(L"../Assets/Textures/Cubemaps/HDRI/",
-                              L"SampleEnvHDR.dds", L"SampleSpecularHDR.dds",
-                              L"SampleDiffuseHDR.dds", L"SampleBrdf.dds");
+                              L"NightStarsEnvHDR.dds", L"NightStarsSpecularHDR.dds",
+                              L"NightStarsDiffuseHDR.dds", L"NightStarsBrdf.dds");
     }
-     
+
     // Terrain (ground)
     { 
         MeshData terrainData = GeometryGenerator::MakeSquareTerrain(5.0);
-        string path = "../Assets/Textures/PBR/cgaxis_grass_with_mud_and_stones_39_46_4K/";
+        string path =
+            "../Assets/Textures/PBR/cgaxis_grass_with_mud_and_stones_39_46_4K/";
         terrainData.albedoTextureFilename =
             path + "grass_with_mud_and_stones_39_46_diffuse.jpg";
         terrainData.normalTextureFilename =
@@ -47,42 +48,46 @@ bool Sample_Basic::InitLevel()
         terrain->UpdateWorldRow(Matrix::CreateRotationX(3.141592f * 0.5f) *
                                 Matrix::CreateTranslation(position));
 
-        terrain->SetPSO(Graphics::terrainWirePSO, Graphics::terrainSolidPSO);
+        terrain->SetPSO(Graphics::terrainWirePSO, Graphics::terrainSolidPSO); // basicPS
 
         level->AddActor(terrain);
-    } 
-    // Mirror
-    {
-        // MeshData terrainData =
-        //     GeometryGenerator::MakeSquareGridTerrain(4, 4, 5.0); // Square vs
-        //     SquareGrid
-        MeshData mirrorData = GeometryGenerator::MakeSquare(
-            2.0, {10.0f, 10.0f}); // Square vs SquareGrid
-        string path = "../Assets/Textures/PBR/stringy-marble-ue/";
-        mirrorData.albedoTextureFilename = path + "stringy_marble_albedo.png";
-        mirrorData.emissiveTextureFilename = "";
-        mirrorData.aoTextureFilename = path + "stringy_marble_ao.png";
-        mirrorData.metallicTextureFilename = path + "stringy_marble_Metallic.png"; // 그냥 까만텍스쳐라서 Mirror Metallic factor 반응 X
-        mirrorData.normalTextureFilename = path + "stringy_marble_Normal-dx.png";
-        mirrorData.roughnessTextureFilename = path + "stringy_marble_Roughness.png";
-
-        auto mirror = make_shared<Actor>(
-            renderer.GetDevice(), renderer.GetContext(), vector{mirrorData});
-        mirror->materialConsts.GetCpu().albedoFactor = Vector3(0.7f);
-        mirror->materialConsts.GetCpu().emissionFactor = Vector3(0.0f);
-        mirror->materialConsts.GetCpu().metallicFactor = 0.5f;
-        mirror->materialConsts.GetCpu().roughnessFactor = 0.3f;
-        mirror->name = "terrain";
-
-        Vector3 position = Vector3(4.0f, 2.0f, 2.0f);
-        mirror->UpdateWorldRow(Matrix::CreateScale(1.0f, 1.5f, 1.0f) *
-                               Matrix::CreateRotationY(3.141592f * 0.5f) *
-                               Matrix::CreateTranslation(position));
-
-        mirror->SetPSO(Graphics::defaultWirePSO, Graphics::defaultSolidPSO);
-
-        level->SetMirror(mirror, position, Vector3(-1.0f, 0.0f, 0.0f));
     }
+
+    //// Mirror
+    //{
+    //    // MeshData terrainData =
+    //    //     GeometryGenerator::MakeSquareGridTerrain(4, 4, 5.0); // Square vs
+    //    //     SquareGrid
+    //    MeshData mirrorData = GeometryGenerator::MakeSquare(
+    //        5.0, {10.0f, 10.0f}); // Square vs SquareGrid
+    //    string path = "../Assets/Textures/PBR/stringy-marble-ue/";
+    //    mirrorData.albedoTextureFilename = path + "stringy_marble_albedo.png";
+    //    mirrorData.emissiveTextureFilename = "";
+    //    mirrorData.aoTextureFilename = path + "stringy_marble_ao.png";
+    //    mirrorData.metallicTextureFilename =
+    //        path + "stringy_marble_Metallic.png"; // 그냥 까만텍스쳐라서 Mirror
+    //                                              // Metallic factor 반응 X
+    //    mirrorData.normalTextureFilename =
+    //        path + "stringy_marble_Normal-dx.png";
+    //    mirrorData.roughnessTextureFilename =
+    //        path + "stringy_marble_Roughness.png";
+
+    //    auto mirror = make_shared<Actor>(
+    //        renderer.GetDevice(), renderer.GetContext(), vector{mirrorData});
+    //    mirror->materialConsts.GetCpu().albedoFactor = Vector3(0.7f);
+    //    mirror->materialConsts.GetCpu().emissionFactor = Vector3(0.0f);
+    //    mirror->materialConsts.GetCpu().metallicFactor = 0.5f;
+    //    mirror->materialConsts.GetCpu().roughnessFactor = 0.3f;
+    //    mirror->name = "terrain";
+
+    //    Vector3 position = Vector3(4.0f, 2.0f, 2.0f);
+    //    mirror->UpdateWorldRow(Matrix::CreateRotationX(3.141592f * 0.5f) *
+    //                           Matrix::CreateTranslation(position));
+
+    //    mirror->SetPSO(Graphics::defaultWirePSO, Graphics::defaultSolidPSO);
+
+    //    level->SetMirror(mirror, position, Vector3(-1.0f, 0.0f, 0.0f));
+    //}
 
     // PBR Sphere <- UE PBR
     {
@@ -170,7 +175,7 @@ bool Sample_Basic::InitLevel()
     return true;
 }
 
-void Sample_Basic::UpdateGUI()
+void Sample_Night::UpdateGUI()
 {
     Engine::UpdateGUI();
 
@@ -200,6 +205,9 @@ void Sample_Basic::UpdateGUI()
                                    &terrain->meshConsts.GetCpu().heightScale,
                                    0.0f, 1.0f);
         flag += ImGui::CheckboxFlags(
+            "Use MetallicMap",
+            &terrain->materialConsts.GetCpu().useMetallicMap, 1);
+        flag += ImGui::CheckboxFlags(
             "Use RoughnessMap",
             &terrain->materialConsts.GetCpu().useRoughnessMap, 1);
 
@@ -211,30 +219,30 @@ void Sample_Basic::UpdateGUI()
 
         ImGui::TreePop();
     }
-     
-    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::TreeNode("Mirror"))
-    {
-        auto &mirrorAlpha = level->mirrorAlpha;
-        auto &mirror = level->mirror;
 
-        ImGui::SliderFloat("Alpha", &mirrorAlpha, 0.0f, 1.0f);
-        const float blendColor[4] = {mirrorAlpha, mirrorAlpha,
-                                     mirrorAlpha, 1.0f};
-        if (renderer.drawAsWire)
-            Graphics::mirrorBlendWirePSO.SetBlendFactor(blendColor);
-        else
-            Graphics::mirrorBlendSolidPSO.SetBlendFactor(blendColor);
+    //ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    //if (ImGui::TreeNode("Mirror"))
+    //{
+    //    auto &mirrorAlpha = level->mirrorAlpha;
+    //    auto &mirror = level->mirror;
 
-        ImGui::SliderFloat("Metallic",
-                           &mirror->materialConsts.GetCpu().metallicFactor,
-                           0.0f, 1.0f);
-        ImGui::SliderFloat("Roughness",
-                           &mirror->materialConsts.GetCpu().roughnessFactor,
-                           0.0f, 1.0f);
+    //    ImGui::SliderFloat("Alpha", &mirrorAlpha, 0.0f, 1.0f);
+    //    const float blendColor[4] = {mirrorAlpha, mirrorAlpha, mirrorAlpha,
+    //                                 1.0f};
+    //    if (renderer.drawAsWire)
+    //        Graphics::mirrorBlendWirePSO.SetBlendFactor(blendColor);
+    //    else
+    //        Graphics::mirrorBlendSolidPSO.SetBlendFactor(blendColor);
 
-        ImGui::TreePop();
-    }
+    //    ImGui::SliderFloat("Metallic",
+    //                       &mirror->materialConsts.GetCpu().metallicFactor,
+    //                       0.0f, 1.0f);
+    //    ImGui::SliderFloat("Roughness",
+    //                       &mirror->materialConsts.GetCpu().roughnessFactor,
+    //                       0.0f, 1.0f);
+
+    //    ImGui::TreePop();
+    //}
 
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode("Material"))
@@ -288,14 +296,14 @@ void Sample_Basic::UpdateGUI()
     }
 }
 
-void Sample_Basic::Update(float dt)
+void Sample_Night::Update(float dt)
 {
     // cbuffer update
 
     Engine::Update(dt);
 }
 
-void Sample_Basic::Render()
+void Sample_Night::Render()
 {
     Engine::Render();
 }

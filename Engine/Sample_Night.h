@@ -1,17 +1,11 @@
-/*
- * Unreal Engine PBR
- * Ground <- Mirror (Wireframe = Tessellation)
- * Post Effect: Fog
- * Post Process: Bloom, Exposure, Gamma
- */
 #pragma once
 #include "Engine.h"
 #include "TerrainActor.h"
 
-class Sample_Basic : public Engine
+class Sample_Night : public Engine
 {
 public:
-    Sample_Basic();
+    Sample_Night();
 
     virtual bool InitLevel() override;
     virtual void UpdateGUI() override;
