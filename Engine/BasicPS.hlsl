@@ -77,12 +77,12 @@ float3 AmbientLightingByIBL(float3 albedo, float3 normalW, float3 pixelToEye, fl
 
 // GGX/Towbridge-Reitz normal distribution function.
 // Uses Disney's reparametrization of alpha = roughness^2.
-float NdfGGX(float NdotH, float roughness)
+float NdfGGX(float NdotH, float roughness, float alphaPrime)
 {
     float alpha = roughness * roughness;
     float alphaSq = alpha * alpha;
     float denom = (NdotH * NdotH) * (alphaSq - 1.0) + 1.0;
-    return alphaSq / (3.141592 * denom * denom);
+    return alphaPrime * alphaPrime / (3.141592 * denom * denom);
 }
 
 // Single term for separable Schlick-GGX below.
@@ -289,7 +289,7 @@ PixelShaderOutput main(PixelShaderInput input)
             float3 r = normalize(reflect(eyeWorld - input.posWorld, normalWorld));
             float3 centerToRay = dot(L, r) * r - L;
             float3 representativePoint = L + centerToRay * clamp(lights[i].radius / length(centerToRay), 0.0, 1.0);
-            representativePoint += input.posWorld;
+            representativePoint += input.posWorld; // To World-Coordinates
             float3 lightVec = representativePoint - input.posWorld;
 
             float lightDist = length(lightVec);
@@ -306,7 +306,11 @@ PixelShaderOutput main(PixelShaderInput input)
             float3 kd = lerp(float3(1, 1, 1) - F, float3(0, 0, 0), metallic);
             float3 diffuseBRDF = kd * albedo.rgb;
 
-            float D = NdfGGX(NdotH, roughness);
+            // Sphere light Normalization
+            float alpha = roughness * roughness;
+            float alphaPrime = saturate(alpha + lights[i].radius / (2.0 * lightDist));
+
+            float D = NdfGGX(NdotH, roughness, alphaPrime);
             float3 G = SchlickGGX(NdotI, NdotO, roughness);
             float3 specularBRDF = (F * D * G) / max(1e-5, 4.0 * NdotI * NdotO); // ZeroDivision ¹æÁö
 
