@@ -64,6 +64,7 @@ ComPtr<ID3D11PixelShader> grassPS;
 ComPtr<ID3D11PixelShader> oceanPS;
 ComPtr<ID3D11PixelShader> volumetricFirePS;
 ComPtr<ID3D11PixelShader> gameExplosionPS;
+ComPtr<ID3D11PixelShader> billboardTreePS;
 
 ComPtr<ID3D11HullShader> terrainHS;
 
@@ -494,8 +495,8 @@ void Graphics::InitShaders(ComPtr<ID3D11Device> &device)
     //    vector<D3D_SHADER_MACRO>{{"SKINNED", "1"}, {NULL, NULL}});
     //D3D11Utils::CreateVertexShaderAndInputLayout(device, L"Ex1802_GrassVS.hlsl",
     //                                             grassIEs, grassVS, grassIL);
-    //D3D11Utils::CreateVertexShaderAndInputLayout(
-    //    device, L"BillboardVS.hlsl", billboardIEs, billboardVS, billboardIL);
+    D3D11Utils::CreateVertexShaderAndInputLayout(
+        device, L"BillboardVS.hlsl", billboardIEs, billboardVS, billboardIL);
 
     D3D11Utils::CreatePixelShader(device, L"BasicPS.hlsl", basicPS);
     D3D11Utils::CreatePixelShader(device, L"PhongPS.hlsl", phongPS);
@@ -509,6 +510,7 @@ void Graphics::InitShaders(ComPtr<ID3D11Device> &device)
     D3D11Utils::CreatePixelShader(device, L"BloomUpPS.hlsl", bloomUpPS);
     D3D11Utils::CreatePixelShader(device, L"DepthOnlyPS.hlsl", depthOnlyPS);
     D3D11Utils::CreatePixelShader(device, L"PostEffectsPS.hlsl", postEffectsPS);
+    D3D11Utils::CreatePixelShader(device, L"BillboardTreePS.hlsl", billboardTreePS);
     //D3D11Utils::CreatePixelShader(device, L"ColorPS.hlsl", colorPS);
     //D3D11Utils::CreatePixelShader(device, L"Ex1802_GrassPS.hlsl", grassPS);
     //D3D11Utils::CreatePixelShader(device, L"Ex1803_OceanPS.hlsl", oceanPS);
@@ -522,7 +524,7 @@ void Graphics::InitShaders(ComPtr<ID3D11Device> &device)
     D3D11Utils::CreateDomainShader(device, L"TerrainDS.hlsl", terrainDS);
 
     D3D11Utils::CreateGeometryShader(device, L"NormalGS.hlsl", normalGS);
-    //D3D11Utils::CreateGeometryShader(device, L"BillboardGS.hlsl", billboardGS);
+    D3D11Utils::CreateGeometryShader(device, L"BillboardGS.hlsl", billboardGS);
 }
 
 void Graphics::InitPipelineStates(ComPtr<ID3D11Device> &device)

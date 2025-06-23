@@ -1,6 +1,7 @@
 #pragma once
 #include "Engine.h"
 #include "TerrainActor.h"
+#include "BillboardActor.h"
 
 class Sample_Night : public Engine
 {
@@ -18,4 +19,5 @@ private:
     shared_ptr<Actor> character;
     shared_ptr<Actor> helmet;
     shared_ptr<Actor> streetLamp;
+    vector<shared_ptr<BillboardActor>> trees;
 };

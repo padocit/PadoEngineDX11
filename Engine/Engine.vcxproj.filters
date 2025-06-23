@@ -67,8 +67,13 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ModelLoader.cpp" />
     <ClCompile Include="PostProcess.cpp" />
-    <ClCompile Include="TerrainActor.cpp" />
-    <ClCompile Include="Sample_Night.cpp" />
+    <ClCompile Include="TerrainActor.cpp">
+      <Filter>Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Sample_Night.cpp">
+      <Filter>Samples</Filter>
+    </ClCompile>
+    <ClCompile Include="BillboardActor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Actor.h">
@@ -120,11 +125,16 @@
     <ClInclude Include="MeshData.h" />
     <ClInclude Include="ModelLoader.h" />
     <ClInclude Include="PostProcess.h" />
-    <ClInclude Include="TerrainActor.h" />
     <ClInclude Include="Texture2D.h" />
     <ClInclude Include="Texture3D.h" />
     <ClInclude Include="Vertex.h" />
-    <ClInclude Include="Sample_Night.h" />
+    <ClInclude Include="TerrainActor.h">
+      <Filter>Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Sample_Night.h">
+      <Filter>Samples</Filter>
+    </ClInclude>
+    <ClInclude Include="BillboardActor.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="BasicPS.hlsl">
@@ -188,6 +198,15 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="DepthOnlyVS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="BillboardGS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="BillboardVS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="BillboardTreePS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

@@ -4,6 +4,7 @@
 #include "TerrainActor.h"
 
 using namespace std;
+using DirectX::SimpleMath::Vector4;
 
 Sample_Night::Sample_Night() : Engine()
 {
@@ -183,6 +184,29 @@ bool Sample_Night::InitLevel()
         level->AddActor(helmet);
     }
 
+    // Billboard Tree
+    {
+        int numTrees = 5;
+        trees.resize(numTrees);
+
+        vector<DirectX::SimpleMath::Vector4> points;
+        Vector4 p = {-10.0f, 1.5f, 20.0f, 1.0f};
+        for (int i = 0; i < numTrees; i++)
+        {
+            trees[i] = std::make_shared<BillboardActor>();
+            trees[i]->castShadow = false;
+            trees[i]->Initialize(renderer.GetDevice(), renderer.GetContext(),
+                                 {p}, 5.0f, Graphics::billboardTreePS);
+            trees[i]->SetTexture(renderer.GetDevice(), renderer.GetContext(),
+                                 "../Assets/Textures/TreeBillboards/" +
+                                     to_string(i + 1) + ".png");
+            
+            level->AddActor(trees[i]);
+            
+            p.x += 5.0f;
+        }
+    }
+     
     // cbuffer init
 
     return true;

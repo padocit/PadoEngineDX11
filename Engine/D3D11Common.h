@@ -63,6 +63,7 @@ extern ComPtr<ID3D11PixelShader> grassPS;
 extern ComPtr<ID3D11PixelShader> oceanPS;
 extern ComPtr<ID3D11PixelShader> volumetricFirePS;
 extern ComPtr<ID3D11PixelShader> gameExplosionPS;
+extern ComPtr<ID3D11PixelShader> billboardTreePS;
 
 extern ComPtr<ID3D11HullShader> terrainHS;
 
