@@ -89,7 +89,7 @@ void D3D11Renderer::UpdateLights(float dt)
         lightDev = Vector3::Transform(
             lightDev, Matrix::CreateRotationY(dt * 3.141592f * 0.5f));
     }
-    globalConstsCPU.lights[1].position = Vector3(0.0f, 1.1f, 2.0f) + lightDev;
+    globalConstsCPU.lights[1].position = Vector3(0.0f, 2.8f, 2.0f) + lightDev;
     Vector3 focusPosition = Vector3(0.0f, -0.5f, 1.7f);
     globalConstsCPU.lights[1].direction =
         focusPosition - globalConstsCPU.lights[1].position;

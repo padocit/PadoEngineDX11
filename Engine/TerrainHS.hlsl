@@ -30,7 +30,8 @@ HS_CONSTANT_DATA_OUTPUT CalcHSPatchConstants(
     float3 center = 
         (ip[0].posModel + ip[1].posModel + ip[2].posModel + ip[3].posModel).xyz * 0.25;
     center = mul(float4(center, 1.0), world).xyz;
-    float dist = length(center - eyeWorld);
+    float dist = 1.0; //TODO: cbuffer data -> dist 계산 켜고 끄기 (checkbox)
+    //float dist = length(center - eyeWorld);
     float minDist = 1.0;
     float maxDist = 10.0;
     float tess = 63.0 * saturate((maxDist - dist) / (maxDist - minDist)) + 1.0;
