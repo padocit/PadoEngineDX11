@@ -6,6 +6,7 @@
 
 using namespace std;
 using namespace DirectX;
+using namespace DirectX::SimpleMath;
 
 bool D3D11Renderer::Initialize(const Resolution &resolution, HWND hWnd)
 {
@@ -44,6 +45,16 @@ bool D3D11Renderer::Initialize(const Resolution &resolution, HWND hWnd)
     // PostEffect에 사용
     screenSquare = make_shared<Actor>(
         device, context, vector{GeometryGenerator::MakeSquare()});
+
+
+    // Prepare Compute Shader
+    CreateUAVs();
+    D3D11Utils::CreateComputeShader(device, L"BlurXGroupCacheCS.hlsl",
+                                    blurXGroupCacheCS);
+    D3D11Utils::CreateComputeShader(device, L"BlurYGroupCacheCS.hlsl",
+                                    blurYGroupCacheCS);
+    blurXGroupCacheComputePSO.computeShader = blurXGroupCacheCS;
+    blurYGroupCacheComputePSO.computeShader = blurYGroupCacheCS;
 
     return true;
 }
@@ -352,6 +363,34 @@ void D3D11Renderer::CreateDepthBuffers()
     }
 }
 
+void D3D11Renderer::CreateUAVs()
+{
+    D3D11Utils::CreateUATexture(device, screenWidth, screenHeight,
+                                DXGI_FORMAT_R16G16B16A16_FLOAT, texA, rtvA,
+                                srvA, uavA);
+
+    D3D11Utils::CreateUATexture(device, screenWidth, screenHeight,
+                                DXGI_FORMAT_R16G16B16A16_FLOAT, texB, rtvB,
+                                srvB, uavB);
+}
+
+void D3D11Renderer::ComputeShaderBarrier()
+{
+    // 참고: BreadcrumbsDirectX-Graphics-Samples (DX12)
+    // void CommandContext::InsertUAVBarrier(GpuResource & Resource, bool
+    // FlushImmediate)
+
+    // 예제들에서 최대 사용하는 SRV, UAV 갯수가 6개
+    ID3D11ShaderResourceView *nullSRV[6] = {
+        0,
+    };
+    context->CSSetShaderResources(0, 6, nullSRV);
+    ID3D11UnorderedAccessView *nullUAV[6] = {
+        0,
+    };
+    context->CSSetUnorderedAccessViews(0, 6, nullUAV, NULL);
+}
+
 void D3D11Renderer::SetResolution(const Resolution& resolution)
 {
     //screenWidth = resolution.width - guiWidth;
@@ -581,7 +620,7 @@ void D3D11Renderer::PostRender()
                                   floatBuffer.Get(), 0,
                                   DXGI_FORMAT_R16G16B16A16_FLOAT);
 
-    // PostEffects (m_globalConstsGPU 사용)
+    // 1. PostEffects (globalConstsGPU 사용)
     D3D11Renderer::SetMainViewportNoGUIWidth();
     D3D11Renderer::SetPipelineState(Graphics::postEffectsPSO);
     D3D11Renderer::SetGlobalConsts(globalConstsGPU);
@@ -604,7 +643,13 @@ void D3D11Renderer::PostRender()
     ID3D11ShaderResourceView *nulls[2] = {0, 0};
     context->PSSetShaderResources(20, 2, nulls);
 
-    // 후처리 (블룸 같은 순수 이미지 처리)
+    // 2. Compute Shader 후처리 (예 - 가우시안 블러)
+    if (blurStrength > 0.0f)
+    {
+        D3D11Renderer::RenderCS();
+    }
+
+    // 3. PostProcess 후처리 (블룸 같은 순수 이미지 처리)
     D3D11Renderer::SetPipelineState(Graphics::postProcessingPSO);
     postProcess.Render(context);
 
@@ -614,6 +659,43 @@ void D3D11Renderer::PostRender()
     context->CopyResource(
         prevBuffer.Get(),
         backBuffer.Get()); // 모션 블러 효과를 위해 렌더링 결과 보관
+}
+
+void D3D11Renderer::RenderCS()
+{
+    // 복사
+    context->CopyResource(texA.Get(), postEffectsBuffer.Get());
+
+    int numBlurs = int(blurStrength * 1000.0f);
+    for (int i = 0; i < numBlurs; i++)
+    {
+        ComputeShaderBlur();
+    }
+
+    // texA -> 다시 postEffectsBuffer로 복사
+    context->CopyResource(postEffectsBuffer.Get(), texA.Get());
+}
+
+void D3D11Renderer::ComputeShaderBlur()
+{
+    context->CSSetSamplers(0, 1, Graphics::pointClampSS.GetAddressOf());
+
+    const UINT tgx = UINT(ceil(screenWidth / 256.0f));
+    const UINT tgy = UINT(ceil(screenHeight / 256.0f));
+
+    // Horizontal X-Blur, A to B
+    SetPipelineState(blurXGroupCacheComputePSO);
+    context->CSSetShaderResources(0, 1, srvA.GetAddressOf());
+    context->CSSetUnorderedAccessViews(0, 1, uavB.GetAddressOf(), NULL);
+    context->Dispatch(tgx, screenHeight, 1);
+    ComputeShaderBarrier();
+
+    // Vertical Y-Blur, B to A
+    SetPipelineState(blurYGroupCacheComputePSO);
+    context->CSSetShaderResources(0, 1, srvB.GetAddressOf());
+    context->CSSetUnorderedAccessViews(0, 1, uavA.GetAddressOf(), NULL);
+    context->Dispatch(screenWidth, tgy, 1);
+    ComputeShaderBarrier();
 }
 
 void D3D11Renderer::SwapBuffer()
@@ -707,6 +789,16 @@ void D3D11Renderer::SetPipelineState(const D3D11PSO &pso)
     context->OMSetDepthStencilState(pso.depthStencilState.Get(),
                                     pso.stencilRef);
     context->IASetPrimitiveTopology(pso.primitiveTopology);
+}
+
+void D3D11Renderer::SetPipelineState(const ComputePSO &pso)
+{
+    context->VSSetShader(NULL, 0, 0);
+    context->PSSetShader(NULL, 0, 0);
+    context->HSSetShader(NULL, 0, 0);
+    context->DSSetShader(NULL, 0, 0);
+    context->GSSetShader(NULL, 0, 0);
+    context->CSSetShader(pso.computeShader.Get(), 0, 0);
 }
 
 float D3D11Renderer::GetAspectRatio() const

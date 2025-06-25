@@ -3,6 +3,7 @@
 #include "D3D11Common.h"
 #include "Camera.h"
 #include "Common.h"
+#include "ComputePSO.h"
 #include "ConstantBuffer.h"
 #include "MeshData.h"
 #include "Mesh.h"
@@ -32,6 +33,8 @@ public:
     void Render();
     void RenderEnd();
     void PostRender();
+    void RenderCS(); // compute shader
+    void ComputeShaderBlur();
     void SwapBuffer();
 
     // Level
@@ -78,8 +81,13 @@ public:
     void SetGlobalConsts(ComPtr<ID3D11Buffer> &globalConstsGPU);
 
     void SetPipelineState(const D3D11PSO &pso);
+    void SetPipelineState(const ComputePSO &pso);
+
     void CreateBuffers();
     void CreateDepthBuffers();
+    void CreateUAVs();
+
+    void ComputeShaderBarrier();
 
 public:
     // Level
@@ -96,6 +104,7 @@ public:
     int postProcessFlag = 0;
     int postEffectsFlag = 0;
     bool lightRotate = false;
+    float blurStrength = 0.0f;
 
     // Render(FP, HDR) -> PostEffects -> PostProcess
     PostProcess postProcess;
@@ -167,5 +176,16 @@ private:
     ComPtr<ID3D11Buffer> postEffectsConstsGPU;
     ComPtr<ID3D11Buffer> reflectGlobalConstsGPU;
     ComPtr<ID3D11Buffer> shadowGlobalConstsGPU[MAX_LIGHTS];
+
+    // Compute Shader
+    ComPtr<ID3D11ComputeShader> blurXGroupCacheCS;
+    ComPtr<ID3D11ComputeShader> blurYGroupCacheCS;
+    ComputePSO blurXGroupCacheComputePSO;
+    ComputePSO blurYGroupCacheComputePSO;
+
+    ComPtr<ID3D11Texture2D> texA, texB;
+    ComPtr<ID3D11RenderTargetView> rtvA, rtvB;
+    ComPtr<ID3D11ShaderResourceView> srvA, srvB;
+    ComPtr<ID3D11UnorderedAccessView> uavA, uavB;
 };
 

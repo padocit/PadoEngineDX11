@@ -135,6 +135,7 @@
       <Filter>Samples</Filter>
     </ClInclude>
     <ClInclude Include="BillboardActor.h" />
+    <ClInclude Include="ComputePSO.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="BasicPS.hlsl">
@@ -207,6 +208,12 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="BillboardTreePS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="BlurXGroupCacheCS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="BlurYGroupCacheCS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

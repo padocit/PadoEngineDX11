@@ -230,7 +230,7 @@ void Engine::UpdateGUI()
         ImGui::TreePop();
     }
 
-    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    ImGui::SetNextItemOpen(false, ImGuiCond_Once);
     if (ImGui::TreeNode("Skybox"))
     {
         ImGui::SliderFloat("Strength", &renderer.globalConstsCPU.strengthIBL, 0.0f,
@@ -246,7 +246,7 @@ void Engine::UpdateGUI()
         ImGui::TreePop();
     }
 
-    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    ImGui::SetNextItemOpen(false, ImGuiCond_Once);
     if (ImGui::TreeNode("Post Effects"))
     {
         int flag = 0;
@@ -266,8 +266,15 @@ void Engine::UpdateGUI()
         ImGui::TreePop();
     }
 
+    ImGui::SetNextItemOpen(false, ImGuiCond_Once);
+    if (ImGui::TreeNode("Compute Shader Effects"))
+    {
+        ImGui::SliderFloat("Gaussian Blur", &renderer.blurStrength, 0.0f, 1.0f);
+        ImGui::TreePop();
+    }
 
-    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+
+    ImGui::SetNextItemOpen(false, ImGuiCond_Once);
     if (ImGui::TreeNode("Post Processing"))
     {
 
